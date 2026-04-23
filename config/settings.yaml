@@ -38,7 +38,7 @@ ui:
     show_working_hours: true
     show_free_spaces: true
     show_tariffs: true
-    show_carousel: false
+    show_carousel: true
 appearance:
   accent_color: '#ffffff'
   success_color: '#00ff33'
@@ -48,7 +48,7 @@ appearance:
   background_end: '#0088ff'
 operating_mode:
   manual_mode: normal
-  schedule_enabled: false
-  schedule_from: 08:00
+  schedule_enabled: true
+  schedule_from: '10:51'
   schedule_to: '22:00'
   closed_text: Парковка не работает

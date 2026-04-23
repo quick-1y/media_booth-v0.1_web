@@ -60,10 +60,10 @@
                 <label class="field"><span>Локаль</span><input id="localeInput" type="text" placeholder="ru-RU" /></label>
                 <label class="field"><span>Формат часов на экране</span><input id="clockFormatInput" type="text" placeholder="HH:mm" /></label>
                 <label class="field"><span>Показывать часы на экране</span><select id="showClockInput"><option value="true">Да</option><option value="false">Нет</option></select></label>
-                <label class="field"><span>Блок «Часы работы»</span><select id="showHoursBlockInput"><option value="true">Показывать</option><option value="false">Скрыть</option></select></label>
-                <label class="field"><span>Блок «Свободных мест»</span><select id="showPlacesBlockInput"><option value="true">Показывать</option><option value="false">Скрыть</option></select></label>
-                <label class="field"><span>Блок «Тарифы»</span><select id="showTariffsBlockInput"><option value="true">Показывать</option><option value="false">Скрыть</option></select></label>
-                <label class="field"><span>Блок «Реклама»</span><select id="showCarouselBlockInput"><option value="true">Показывать</option><option value="false">Скрыть</option></select></label>
+                <label class="field field-switch"><span class="switch-label">Блок «Часы работы»</span><span class="switch"><input type="checkbox" id="showHoursBlockInput" /><span class="switch-knob"></span></span></label>
+                <label class="field field-switch"><span class="switch-label">Блок «Свободных мест»</span><span class="switch"><input type="checkbox" id="showPlacesBlockInput" /><span class="switch-knob"></span></span></label>
+                <label class="field field-switch"><span class="switch-label">Блок «Тарифы»</span><span class="switch"><input type="checkbox" id="showTariffsBlockInput" /><span class="switch-knob"></span></span></label>
+                <label class="field field-switch"><span class="switch-label">Блок «Реклама»</span><span class="switch"><input type="checkbox" id="showCarouselBlockInput" /><span class="switch-knob"></span></span></label>
               </div>
             </section>
 
@@ -128,13 +128,12 @@
                   </select>
                   <small>Используется, если автоматическое расписание отключено</small>
                 </label>
-                <label class="field wide">
-                  <span>Автоматическое расписание</span>
-                  <select id="scheduleEnabledInput">
-                    <option value="false">Отключено</option>
-                    <option value="true">Включено</option>
-                  </select>
-                  <small>При включённом расписании оно имеет приоритет над ручным режимом</small>
+                <label class="field field-switch wide">
+                  <span class="switch-label-group">
+                    <span class="switch-label">Автоматическое расписание</span>
+                    <small>При включённом расписании оно имеет приоритет над ручным режимом</small>
+                  </span>
+                  <span class="switch"><input type="checkbox" id="scheduleEnabledInput" /><span class="switch-knob"></span></span>
                 </label>
                 <label class="field"><span>С</span><input id="scheduleFromInput" type="time" /></label>
                 <label class="field"><span>До</span><input id="scheduleToInput" type="time" /></label>

@@ -190,13 +190,13 @@ function fillForm(config, metadata) {
   fields.backgroundStartInput.value = config.appearance.background_start;
   fields.backgroundEndInput.value = config.appearance.background_end;
   const b = config.ui?.blocks || {};
-  fields.showHoursBlockInput.value = String(b.show_working_hours ?? true);
-  fields.showPlacesBlockInput.value = String(b.show_free_spaces ?? true);
-  fields.showTariffsBlockInput.value = String(b.show_tariffs ?? true);
-  fields.showCarouselBlockInput.value = String(b.show_carousel ?? true);
+  fields.showHoursBlockInput.checked = b.show_working_hours ?? true;
+  fields.showPlacesBlockInput.checked = b.show_free_spaces ?? true;
+  fields.showTariffsBlockInput.checked = b.show_tariffs ?? true;
+  fields.showCarouselBlockInput.checked = b.show_carousel ?? true;
   const om = config.operating_mode || {};
   fields.manualModeInput.value = om.manual_mode || 'normal';
-  fields.scheduleEnabledInput.value = String(om.schedule_enabled ?? false);
+  fields.scheduleEnabledInput.checked = om.schedule_enabled ?? false;
   fields.scheduleFromInput.value = om.schedule_from || '08:00';
   fields.scheduleToInput.value = om.schedule_to || '22:00';
   fields.closedTextInput.value = om.closed_text || 'Parking is closed';
@@ -237,15 +237,15 @@ function readForm() {
       settings_access: state.config.ui.settings_access,
       diagnostics: state.config.ui.diagnostics,
       blocks: {
-        show_working_hours: fields.showHoursBlockInput.value === 'true',
-        show_free_spaces: fields.showPlacesBlockInput.value === 'true',
-        show_tariffs: fields.showTariffsBlockInput.value === 'true',
-        show_carousel: fields.showCarouselBlockInput.value === 'true',
+        show_working_hours: fields.showHoursBlockInput.checked,
+        show_free_spaces: fields.showPlacesBlockInput.checked,
+        show_tariffs: fields.showTariffsBlockInput.checked,
+        show_carousel: fields.showCarouselBlockInput.checked,
       },
     },
     operating_mode: {
       manual_mode: fields.manualModeInput.value,
-      schedule_enabled: fields.scheduleEnabledInput.value === 'true',
+      schedule_enabled: fields.scheduleEnabledInput.checked,
       schedule_from: fields.scheduleFromInput.value || '08:00',
       schedule_to: fields.scheduleToInput.value || '22:00',
       closed_text: fields.closedTextInput.value.trim() || 'Parking is closed',
