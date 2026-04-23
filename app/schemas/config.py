@@ -4,7 +4,6 @@ from pydantic import AliasChoices, BaseModel, Field, field_validator
 
 
 class AppSection(BaseModel):
-    locale: str = "ru-RU"
     timezone: str = "Europe/Moscow"
     show_clock: bool = True
     clock_format: str = "HH:mm"

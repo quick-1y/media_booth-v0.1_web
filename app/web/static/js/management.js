@@ -3,6 +3,9 @@ const el = {
   boothNameInput: document.getElementById('boothNameInput'),
   createBoothBtn: document.getElementById('createBoothBtn'),
   createStatus: document.getElementById('createStatus'),
+  boothSettingsOverlay: document.getElementById('boothSettingsOverlay'),
+  boothSettingsFrame: document.getElementById('boothSettingsFrame'),
+  boothOverlayClose: document.getElementById('boothOverlayClose'),
 };
 
 function escapeHtml(v) {
@@ -45,11 +48,15 @@ function renderBooths(booths) {
       <span class="booth-meta">Создан: ${escapeHtml(formatDate(b.created_at))}</span>
       <div class="booth-actions">
         <a href="/booth/${escapeHtml(b.id)}" class="mgmt-btn mgmt-btn-open" target="_blank">Открыть</a>
+        <button class="mgmt-btn mgmt-btn-settings" data-settings-id="${b.id}">Настроить</button>
         <button class="mgmt-btn mgmt-btn-danger" data-id="${b.id}">Удалить</button>
       </div>
     </div>
   `).join('');
 
+  el.boothsList.querySelectorAll('[data-settings-id]').forEach(btn => {
+    btn.addEventListener('click', () => openBoothSettings(Number(btn.dataset.settingsId)));
+  });
   el.boothsList.querySelectorAll('[data-id]').forEach(btn => {
     if (btn.tagName === 'BUTTON') {
       btn.addEventListener('click', () => deleteBooth(Number(btn.dataset.id)));
@@ -100,6 +107,28 @@ async function deleteBooth(id) {
     setStatus(`Ошибка удаления: ${err.message}`, 'error');
   }
 }
+
+function openBoothSettings(boothId) {
+  el.boothSettingsFrame.src = `/booth/${boothId}?settings`;
+  el.boothSettingsOverlay.style.display = 'flex';
+}
+
+function closeBoothSettings() {
+  el.boothSettingsOverlay.style.display = 'none';
+  el.boothSettingsFrame.src = '';
+}
+
+el.boothOverlayClose.addEventListener('click', closeBoothSettings);
+
+window.addEventListener('message', (event) => {
+  if (event.data === 'booth-settings-closed') closeBoothSettings();
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && el.boothSettingsOverlay.style.display !== 'none') {
+    closeBoothSettings();
+  }
+});
 
 el.createBoothBtn.addEventListener('click', createBooth);
 el.boothNameInput.addEventListener('keydown', e => { if (e.key === 'Enter') createBooth(); });

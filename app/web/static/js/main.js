@@ -43,8 +43,8 @@ const el = {
 };
 
 const fields = {
+  boothNameInput: document.getElementById('boothNameInput'),
   timezoneInput: document.getElementById('timezoneInput'),
-  localeInput: document.getElementById('localeInput'),
   clockFormatInput: document.getElementById('clockFormatInput'),
   showClockInput: document.getElementById('showClockInput'),
   parserServerInput: document.getElementById('parserServerInput'),
@@ -210,8 +210,8 @@ function renderConfig(config) {
 }
 
 function fillForm(config, metadata) {
+  fields.boothNameInput.value = metadata?.booth_name || '';
   fields.timezoneInput.value = config.app.timezone;
-  fields.localeInput.value = config.app.locale;
   fields.clockFormatInput.value = config.app.clock_format ?? 'HH:mm';
   fields.showClockInput.value = String(config.app.show_clock ?? true);
   fields.parserServerInput.value = config.parking.parser.server;
@@ -244,10 +244,11 @@ function fillForm(config, metadata) {
   fields.scheduleFromInput.value = om.schedule_from || '08:00';
   fields.scheduleToInput.value = om.schedule_to || '22:00';
   fields.closedTextInput.value = om.closed_text || 'Parking is closed';
-  el.configPathPreview.textContent = `Стенд #${BOOTH_ID}`;
+  const boothLabel = metadata?.booth_name ? `${metadata.booth_name} (#${BOOTH_ID})` : `Стенд #${BOOTH_ID}`;
+  el.configPathPreview.textContent = boothLabel;
   el.loadedAtPreview.textContent = metadata?.loaded_at || '—';
   el.savedAtPreview.textContent = metadata?.saved_at || '—';
-  el.settingsMetaLine.textContent = `Стенд #${BOOTH_ID}`;
+  el.settingsMetaLine.textContent = boothLabel;
   state.dirty = false;
   updateDirtyState();
 }
@@ -257,7 +258,6 @@ function readForm() {
     version: 1,
     app: {
       timezone: fields.timezoneInput.value.trim() || 'Europe/Moscow',
-      locale: fields.localeInput.value.trim() || 'ru-RU',
       clock_format: fields.clockFormatInput.value.trim() || 'HH:mm',
       show_clock: fields.showClockInput.value === 'true',
     },
@@ -503,6 +503,9 @@ function openSettings() {
 function closeSettings() {
   state.settingsOpen = false;
   el.settingsBackdrop.style.display = 'none';
+  if (window.self !== window.top) {
+    window.parent.postMessage('booth-settings-closed', '*');
+  }
 }
 
 function switchTab(name) {
@@ -514,6 +517,11 @@ function switchTab(name) {
 
 async function saveSettings() {
   try {
+    const newName = fields.boothNameInput.value.trim();
+    const nameChanged = newName && newName !== state.metadata?.booth_name;
+    if (nameChanged) {
+      await api(`/api/booths/${BOOTH_ID}`, { method: 'PATCH', body: JSON.stringify({ name: newName }) });
+    }
     const data = await api(`/api/booths/${BOOTH_ID}/settings`, { method: 'PUT', body: JSON.stringify(readForm()) });
     state.config = data.config;
     state.metadata = data.metadata;
@@ -599,6 +607,9 @@ async function bootstrap() {
     await loadMedia();
     scheduleParkingReload();
     scheduleModeCheck();
+    if (new URLSearchParams(window.location.search).has('settings')) {
+      openSettings();
+    }
   } catch (error) {
     el.settingsStatus.textContent = `Ошибка инициализации: ${error.message}`;
   }

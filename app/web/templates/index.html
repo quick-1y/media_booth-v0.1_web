@@ -56,8 +56,8 @@
 
             <section class="tab-panel active" data-panel="general">
               <div class="form-grid">
+                <label class="field wide"><span>Название стенда</span><input id="boothNameInput" type="text" placeholder="Введите название" maxlength="100" /></label>
                 <label class="field"><span>Часовой пояс</span><input id="timezoneInput" type="text" placeholder="Europe/Moscow" /></label>
-                <label class="field"><span>Локаль</span><input id="localeInput" type="text" placeholder="ru-RU" /></label>
                 <label class="field"><span>Формат часов на экране</span><input id="clockFormatInput" type="text" placeholder="HH:mm" /></label>
                 <label class="field"><span>Показывать часы на экране</span><select id="showClockInput"><option value="true">Да</option><option value="false">Нет</option></select></label>
                 <label class="field field-switch"><span class="switch-label">Блок «Часы работы»</span><span class="switch"><input type="checkbox" id="showHoursBlockInput" /><span class="switch-knob"></span></span></label>
@@ -156,7 +156,7 @@
                 <div class="diag-card"><div class="diag-title">Создан</div><pre id="loadedAtPreview">—</pre></div>
                 <div class="diag-card"><div class="diag-title">Последнее сохранение</div><pre id="savedAtPreview">—</pre></div>
                 <div class="diag-card wide"><div class="diag-title">Тест парсера</div><pre id="parserTestOutput">Нажмите «Проверить парсер»</pre></div>
-                <div class="diag-card wide"><div class="diag-title">Конфигурация (JSON)</div><pre id="rawYamlOutput">Загрузка…</pre></div>
+                <div class="diag-card wide"><div class="diag-title">Настройки стенда (из БД)</div><pre id="rawYamlOutput">Загрузка…</pre></div>
               </div>
             </section>
 

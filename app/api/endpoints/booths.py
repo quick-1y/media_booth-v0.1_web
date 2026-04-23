@@ -2,7 +2,7 @@ from urllib.parse import unquote
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from app.schemas.config import AppConfig, ParserTestRequest
-from app.schemas.booth import BoothCreate
+from app.schemas.booth import BoothCreate, BoothRename
 from app.services.deps import (
     get_booths_service,
     get_settings_service,
@@ -24,6 +24,19 @@ async def list_booths() -> dict:
 async def create_booth(payload: BoothCreate) -> dict:
     booth = await get_booths_service().create_booth(payload.name)
     return {"booth": booth}
+
+
+@router.patch("/{booth_id}")
+async def rename_booth(booth_id: int, payload: BoothRename) -> dict:
+    from app.db import get_pool
+    result = await get_pool().execute(
+        "UPDATE booths SET name = $1, updated_at = NOW() WHERE id = $2",
+        payload.name,
+        booth_id,
+    )
+    if result == "UPDATE 0":
+        raise HTTPException(status_code=404, detail=f"Стенд {booth_id} не найден")
+    return {"message": "Название обновлено", "name": payload.name}
 
 
 @router.delete("/{booth_id}")
