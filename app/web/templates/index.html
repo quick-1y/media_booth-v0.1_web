@@ -9,7 +9,7 @@
   <body>
     <button class="settings-hotspot" id="settingsHotspot" aria-label="Открыть настройки"></button>
     <div class="layout">
-      <section class="panel info-panel">
+      <section class="panel info-panel" id="hoursPanel">
         <div class="panel-head compact"><h2 class="panel-title">Часы работы</h2></div>
         <div class="stack-list" id="hoursList"></div>
       </section>
@@ -26,7 +26,7 @@
       <section class="panel closed-message-panel" id="closedPanel" style="display:none">
         <div id="closedMessageText" class="closed-message-text">Parking is closed</div>
       </section>
-      <section class="panel carousel-panel">
+      <section class="panel carousel-panel" id="carouselPanel">
         <div class="carousel-stage" id="carouselStage"><div class="carousel-empty" id="carouselEmpty">Нет рекламных файлов</div></div>
       </section>
     </div>
@@ -60,6 +60,10 @@
                 <label class="field"><span>Локаль</span><input id="localeInput" type="text" placeholder="ru-RU" /></label>
                 <label class="field"><span>Формат часов на экране</span><input id="clockFormatInput" type="text" placeholder="HH:mm" /></label>
                 <label class="field"><span>Показывать часы на экране</span><select id="showClockInput"><option value="true">Да</option><option value="false">Нет</option></select></label>
+                <label class="field"><span>Блок «Часы работы»</span><select id="showHoursBlockInput"><option value="true">Показывать</option><option value="false">Скрыть</option></select></label>
+                <label class="field"><span>Блок «Свободных мест»</span><select id="showPlacesBlockInput"><option value="true">Показывать</option><option value="false">Скрыть</option></select></label>
+                <label class="field"><span>Блок «Тарифы»</span><select id="showTariffsBlockInput"><option value="true">Показывать</option><option value="false">Скрыть</option></select></label>
+                <label class="field"><span>Блок «Реклама»</span><select id="showCarouselBlockInput"><option value="true">Показывать</option><option value="false">Скрыть</option></select></label>
               </div>
             </section>
 

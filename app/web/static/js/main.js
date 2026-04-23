@@ -14,10 +14,12 @@ const el = {
   placesList: document.getElementById('placesList'),
   hoursList: document.getElementById('hoursList'),
   tariffsList: document.getElementById('tariffsList'),
+  hoursPanel: document.getElementById('hoursPanel'),
   placesPanel: document.getElementById('placesPanel'),
   tariffsPanel: document.getElementById('tariffsPanel'),
   closedPanel: document.getElementById('closedPanel'),
   closedMessageText: document.getElementById('closedMessageText'),
+  carouselPanel: document.getElementById('carouselPanel'),
   carouselStage: document.getElementById('carouselStage'),
   carouselEmpty: document.getElementById('carouselEmpty'),
   settingsHotspot: document.getElementById('settingsHotspot'),
@@ -62,6 +64,10 @@ const fields = {
   scheduleFromInput: document.getElementById('scheduleFromInput'),
   scheduleToInput: document.getElementById('scheduleToInput'),
   closedTextInput: document.getElementById('closedTextInput'),
+  showHoursBlockInput: document.getElementById('showHoursBlockInput'),
+  showPlacesBlockInput: document.getElementById('showPlacesBlockInput'),
+  showTariffsBlockInput: document.getElementById('showTariffsBlockInput'),
+  showCarouselBlockInput: document.getElementById('showCarouselBlockInput'),
 };
 
 const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
@@ -138,10 +144,13 @@ function getEffectiveMode(config) {
 
 function applyDisplayMode(config) {
   const isClosed = getEffectiveMode(config) === 'closed';
-  el.placesPanel.style.display = isClosed ? 'none' : '';
-  el.tariffsPanel.style.display = isClosed ? 'none' : '';
+  const b = config.ui?.blocks || {};
+  el.hoursPanel.style.display = (b.show_working_hours ?? true) ? '' : 'none';
+  el.placesPanel.style.display = (!isClosed && (b.show_free_spaces ?? true)) ? '' : 'none';
+  el.tariffsPanel.style.display = (!isClosed && (b.show_tariffs ?? true)) ? '' : 'none';
   el.closedPanel.style.display = isClosed ? '' : 'none';
   el.closedMessageText.textContent = config.operating_mode?.closed_text || 'Parking is closed';
+  el.carouselPanel.style.display = (b.show_carousel ?? true) ? '' : 'none';
 }
 
 function applyAppearance(config) {
@@ -180,6 +189,11 @@ function fillForm(config, metadata) {
   fields.dangerColorInput.value = config.appearance.danger_color;
   fields.backgroundStartInput.value = config.appearance.background_start;
   fields.backgroundEndInput.value = config.appearance.background_end;
+  const b = config.ui?.blocks || {};
+  fields.showHoursBlockInput.value = String(b.show_working_hours ?? true);
+  fields.showPlacesBlockInput.value = String(b.show_free_spaces ?? true);
+  fields.showTariffsBlockInput.value = String(b.show_tariffs ?? true);
+  fields.showCarouselBlockInput.value = String(b.show_carousel ?? true);
   const om = config.operating_mode || {};
   fields.manualModeInput.value = om.manual_mode || 'normal';
   fields.scheduleEnabledInput.value = String(om.schedule_enabled ?? false);
@@ -219,7 +233,16 @@ function readForm() {
       carousel_seconds: Number(fields.carouselSecondsInput.value || 8),
       allowed_extensions: state.config.media.allowed_extensions,
     },
-    ui: state.config.ui,
+    ui: {
+      settings_access: state.config.ui.settings_access,
+      diagnostics: state.config.ui.diagnostics,
+      blocks: {
+        show_working_hours: fields.showHoursBlockInput.value === 'true',
+        show_free_spaces: fields.showPlacesBlockInput.value === 'true',
+        show_tariffs: fields.showTariffsBlockInput.value === 'true',
+        show_carousel: fields.showCarouselBlockInput.value === 'true',
+      },
+    },
     operating_mode: {
       manual_mode: fields.manualModeInput.value,
       schedule_enabled: fields.scheduleEnabledInput.value === 'true',

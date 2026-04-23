@@ -52,9 +52,17 @@ class DiagnosticsSection(BaseModel):
     show_parser_test: bool = True
 
 
+class BlocksSection(BaseModel):
+    show_working_hours: bool = True
+    show_free_spaces: bool = True
+    show_tariffs: bool = True
+    show_carousel: bool = True
+
+
 class UiSection(BaseModel):
     settings_access: SettingsAccessSection = Field(default_factory=SettingsAccessSection)
     diagnostics: DiagnosticsSection = Field(default_factory=DiagnosticsSection)
+    blocks: BlocksSection = Field(default_factory=BlocksSection)
 
 
 class AppearanceSection(BaseModel):

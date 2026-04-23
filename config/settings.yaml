@@ -34,6 +34,11 @@ ui:
   diagnostics:
     show_raw_yaml_preview: true
     show_parser_test: true
+  blocks:
+    show_working_hours: true
+    show_free_spaces: true
+    show_tariffs: true
+    show_carousel: false
 appearance:
   accent_color: '#ffffff'
   success_color: '#00ff33'
