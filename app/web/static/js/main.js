@@ -3,6 +3,7 @@ const state = {
   metadata: null,
   parkingTimer: null,
   carouselTimer: null,
+  carouselGeneration: 0,
   modeCheckTimer: null,
   carouselIndex: 0,
   carouselItems: [],
@@ -283,7 +284,8 @@ async function loadRawYaml() {
 }
 
 function clearCarousel() {
-  if (state.carouselTimer) { window.clearInterval(state.carouselTimer); state.carouselTimer = null; }
+  state.carouselGeneration++;
+  if (state.carouselTimer) { window.clearTimeout(state.carouselTimer); state.carouselTimer = null; }
   state.carouselItems = [];
   state.carouselIndex = 0;
   Array.from(el.carouselStage.querySelectorAll('.carousel-item')).forEach(node => node.remove());
@@ -301,6 +303,29 @@ function activateCarouselItem(index) {
   });
 }
 
+function scheduleNextSlide() {
+  const gen = state.carouselGeneration;
+  const nodes = Array.from(el.carouselStage.querySelectorAll('.carousel-item'));
+  const activeNode = nodes[state.carouselIndex];
+  if (!activeNode || !state.carouselItems.length) return;
+
+  function advance() {
+    if (state.carouselGeneration !== gen) return;
+    state.carouselTimer = null;
+    state.carouselIndex = (state.carouselIndex + 1) % state.carouselItems.length;
+    activateCarouselItem(state.carouselIndex);
+    scheduleNextSlide();
+  }
+
+  const video = activeNode.querySelector('video');
+  if (video) {
+    video.addEventListener('ended', advance, { once: true });
+  } else {
+    const durationMs = Math.max(2, Number(state.config.media.carousel_seconds || 8)) * 1000;
+    state.carouselTimer = window.setTimeout(advance, durationMs);
+  }
+}
+
 function renderCarousel(items) {
   clearCarousel();
   state.carouselItems = items;
@@ -311,7 +336,7 @@ function renderCarousel(items) {
     wrap.className = `carousel-item${index === 0 ? ' active' : ''}`;
     if (item.type === 'video') {
       const video = document.createElement('video');
-      video.src = item.url; video.muted = true; video.loop = true; video.playsInline = true;
+      video.src = item.url; video.muted = true; video.playsInline = true;
       if (index === 0) video.autoplay = true;
       wrap.appendChild(video);
     } else {
@@ -321,11 +346,7 @@ function renderCarousel(items) {
     }
     el.carouselStage.appendChild(wrap);
   });
-  const durationMs = Math.max(2, Number(state.config.media.carousel_seconds || 8)) * 1000;
-  state.carouselTimer = window.setInterval(() => {
-    state.carouselIndex = (state.carouselIndex + 1) % state.carouselItems.length;
-    activateCarouselItem(state.carouselIndex);
-  }, durationMs);
+  scheduleNextSlide();
 }
 
 async function loadMedia() {
