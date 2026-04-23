@@ -54,10 +54,17 @@ const fields = {
   tariffsInput: document.getElementById('tariffsInput'),
   adsPathInput: document.getElementById('adsPathInput'),
   carouselSecondsInput: document.getElementById('carouselSecondsInput'),
-  accentColorInput: document.getElementById('accentColorInput'),
-  successColorInput: document.getElementById('successColorInput'),
-  warningColorInput: document.getElementById('warningColorInput'),
-  dangerColorInput: document.getElementById('dangerColorInput'),
+  freePlacesColorInput: document.getElementById('freePlacesColorInput'),
+  noPlacesColorInput: document.getElementById('noPlacesColorInput'),
+  noDataColorInput: document.getElementById('noDataColorInput'),
+  hoursTextColorInput: document.getElementById('hoursTextColorInput'),
+  tariffsTextColorInput: document.getElementById('tariffsTextColorInput'),
+  closedMessageColorInput: document.getElementById('closedMessageColorInput'),
+  panelBackgroundColorInput: document.getElementById('panelBackgroundColorInput'),
+  cardBackgroundColorInput: document.getElementById('cardBackgroundColorInput'),
+  borderColorInput: document.getElementById('borderColorInput'),
+  primaryTextColorInput: document.getElementById('primaryTextColorInput'),
+  secondaryTextColorInput: document.getElementById('secondaryTextColorInput'),
   backgroundStartInput: document.getElementById('backgroundStartInput'),
   backgroundEndInput: document.getElementById('backgroundEndInput'),
   manualModeInput: document.getElementById('manualModeInput'),
@@ -88,6 +95,30 @@ function toLines(text) {
   return String(text || '').split('\n').map(i => i.trim()).filter(Boolean);
 }
 
+function parseColorToHex(value) {
+  const raw = String(value || '').trim();
+  const hex = raw.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hex) {
+    let h = hex[1];
+    if (h.length === 3) h = h.split('').map(ch => ch + ch).join('');
+    return `#${h.toLowerCase()}`;
+  }
+  const rgba = raw.match(/^rgba?\(([^)]+)\)$/i);
+  if (!rgba) return '#000000';
+  const parts = rgba[1].split(',').map(p => p.trim());
+  if (parts.length < 3) return '#000000';
+  const rgb = parts.slice(0, 3).map(v => Math.max(0, Math.min(255, Number(v) || 0)));
+  return `#${rgb.map(v => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
+}
+
+function hexToRgba(value) {
+  const hex = parseColorToHex(value).replace('#', '');
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, 1)`;
+}
+
 async function api(url, options = {}) {
   const response = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
@@ -101,13 +132,13 @@ async function api(url, options = {}) {
   return response.json();
 }
 
-function renderStack(container, items, type) {
+function renderStack(container, items) {
   if (!Array.isArray(items) || !items.length) {
-    container.innerHTML = `<div class="stack-item"><span class="stack-dot ${type}"></span><span>Нет данных</span></div>`;
+    container.innerHTML = '<div class="stack-item"><span>Нет данных</span></div>';
     return;
   }
   container.innerHTML = items.map(item =>
-    `<div class="stack-item"><span class="stack-dot ${type}"></span><span>${escapeHtml(item)}</span></div>`
+    `<div class="stack-item"><span>${escapeHtml(item)}</span></div>`
   ).join('');
 }
 
@@ -156,18 +187,25 @@ function applyDisplayMode(config) {
 
 function applyAppearance(config) {
   const a = config.appearance;
-  document.documentElement.style.setProperty('--accent', a.accent_color);
-  document.documentElement.style.setProperty('--good', a.success_color);
-  document.documentElement.style.setProperty('--warn', a.warning_color);
-  document.documentElement.style.setProperty('--danger', a.danger_color);
+  document.documentElement.style.setProperty('--good', a.free_places_color);
+  document.documentElement.style.setProperty('--warn', a.no_places_color);
+  document.documentElement.style.setProperty('--danger', a.no_data_color);
+  document.documentElement.style.setProperty('--hours-text', a.hours_text_color);
+  document.documentElement.style.setProperty('--tariffs-text', a.tariffs_text_color);
+  document.documentElement.style.setProperty('--panel', a.panel_background_color);
+  document.documentElement.style.setProperty('--panel-soft', a.card_background_color);
+  document.documentElement.style.setProperty('--line', a.border_color);
+  document.documentElement.style.setProperty('--text', a.primary_text_color);
+  document.documentElement.style.setProperty('--muted', a.secondary_text_color);
   document.documentElement.style.setProperty('--bg-start', a.background_start);
   document.documentElement.style.setProperty('--bg-end', a.background_end);
+  document.documentElement.style.setProperty('--closed-color', a.closed_message_color);
 }
 
 function renderConfig(config) {
   el.settingsHotspot.style.display = config.ui.settings_access.hidden_hotspot_enabled ? 'block' : 'none';
-  renderStack(el.hoursList, config.content.working_hours, 'hours');
-  renderStack(el.tariffsList, config.content.tariffs, 'tariffs');
+  renderStack(el.hoursList, config.content.working_hours);
+  renderStack(el.tariffsList, config.content.tariffs);
   applyAppearance(config);
   applyDisplayMode(config);
 }
@@ -184,12 +222,19 @@ function fillForm(config, metadata) {
   fields.tariffsInput.value = config.content.tariffs.join('\n');
   fields.adsPathInput.value = config.media.ads_path;
   fields.carouselSecondsInput.value = config.media.carousel_seconds;
-  fields.accentColorInput.value = config.appearance.accent_color;
-  fields.successColorInput.value = config.appearance.success_color;
-  fields.warningColorInput.value = config.appearance.warning_color;
-  fields.dangerColorInput.value = config.appearance.danger_color;
-  fields.backgroundStartInput.value = config.appearance.background_start;
-  fields.backgroundEndInput.value = config.appearance.background_end;
+  fields.freePlacesColorInput.value = parseColorToHex(config.appearance.free_places_color);
+  fields.noPlacesColorInput.value = parseColorToHex(config.appearance.no_places_color);
+  fields.noDataColorInput.value = parseColorToHex(config.appearance.no_data_color);
+  fields.hoursTextColorInput.value = parseColorToHex(config.appearance.hours_text_color);
+  fields.tariffsTextColorInput.value = parseColorToHex(config.appearance.tariffs_text_color);
+  fields.closedMessageColorInput.value = parseColorToHex(config.appearance.closed_message_color);
+  fields.panelBackgroundColorInput.value = parseColorToHex(config.appearance.panel_background_color);
+  fields.cardBackgroundColorInput.value = parseColorToHex(config.appearance.card_background_color);
+  fields.borderColorInput.value = parseColorToHex(config.appearance.border_color);
+  fields.primaryTextColorInput.value = parseColorToHex(config.appearance.primary_text_color);
+  fields.secondaryTextColorInput.value = parseColorToHex(config.appearance.secondary_text_color);
+  fields.backgroundStartInput.value = parseColorToHex(config.appearance.background_start);
+  fields.backgroundEndInput.value = parseColorToHex(config.appearance.background_end);
   const b = config.ui?.blocks || {};
   fields.showHoursBlockInput.checked = b.show_working_hours ?? true;
   fields.showPlacesBlockInput.checked = b.show_free_spaces ?? true;
@@ -252,12 +297,19 @@ function readForm() {
       closed_text: fields.closedTextInput.value.trim() || 'Parking is closed',
     },
     appearance: {
-      accent_color: fields.accentColorInput.value,
-      success_color: fields.successColorInput.value,
-      warning_color: fields.warningColorInput.value,
-      danger_color: fields.dangerColorInput.value,
-      background_start: fields.backgroundStartInput.value,
-      background_end: fields.backgroundEndInput.value,
+      free_places_color: hexToRgba(fields.freePlacesColorInput.value),
+      no_places_color: hexToRgba(fields.noPlacesColorInput.value),
+      no_data_color: hexToRgba(fields.noDataColorInput.value),
+      hours_text_color: hexToRgba(fields.hoursTextColorInput.value),
+      tariffs_text_color: hexToRgba(fields.tariffsTextColorInput.value),
+      closed_message_color: hexToRgba(fields.closedMessageColorInput.value),
+      panel_background_color: hexToRgba(fields.panelBackgroundColorInput.value),
+      card_background_color: hexToRgba(fields.cardBackgroundColorInput.value),
+      border_color: hexToRgba(fields.borderColorInput.value),
+      primary_text_color: hexToRgba(fields.primaryTextColorInput.value),
+      secondary_text_color: hexToRgba(fields.secondaryTextColorInput.value),
+      background_start: hexToRgba(fields.backgroundStartInput.value),
+      background_end: hexToRgba(fields.backgroundEndInput.value),
     },
   };
 }

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Literal
-from pydantic import BaseModel, Field, field_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 
 
 class AppSection(BaseModel):
@@ -66,12 +66,19 @@ class UiSection(BaseModel):
 
 
 class AppearanceSection(BaseModel):
-    accent_color: str = "#49a4ff"
-    success_color: str = "#4be28a"
-    warning_color: str = "#ffd05c"
-    danger_color: str = "#ff8c7a"
-    background_start: str = "#0b1620"
-    background_end: str = "#071018"
+    free_places_color: str = Field(default="rgba(75, 226, 138, 1)", validation_alias=AliasChoices("free_places_color", "success_color"))
+    no_places_color: str = Field(default="rgba(255, 208, 92, 1)", validation_alias=AliasChoices("no_places_color", "warning_color"))
+    no_data_color: str = Field(default="rgba(255, 140, 122, 1)", validation_alias=AliasChoices("no_data_color", "danger_color"))
+    hours_text_color: str = "rgba(244, 248, 251, 1)"
+    tariffs_text_color: str = "rgba(244, 248, 251, 1)"
+    closed_message_color: str = "rgba(255, 208, 92, 1)"
+    panel_background_color: str = "rgba(13, 27, 39, 0.88)"
+    card_background_color: str = "rgba(18, 38, 55, 0.82)"
+    border_color: str = "rgba(142, 188, 224, 0.16)"
+    primary_text_color: str = "rgba(244, 248, 251, 1)"
+    secondary_text_color: str = "rgba(159, 179, 196, 1)"
+    background_start: str = "rgba(11, 22, 32, 1)"
+    background_end: str = "rgba(7, 16, 24, 1)"
 
 
 class OperatingModeSection(BaseModel):
