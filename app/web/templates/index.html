@@ -13,15 +13,18 @@
         <div class="panel-head compact"><h2 class="panel-title">Часы работы</h2></div>
         <div class="stack-list" id="hoursList"></div>
       </section>
-      <section class="panel panel-prominent">
+      <section class="panel panel-prominent" id="placesPanel">
         <div class="panel-head">
           <h2 class="panel-title">Свободных мест</h2>
         </div>
         <div class="places-list" id="placesList"></div>
       </section>
-      <section class="panel info-panel">
+      <section class="panel info-panel" id="tariffsPanel">
         <div class="panel-head compact"><h2 class="panel-title">Тарифы</h2></div>
         <div class="stack-list" id="tariffsList"></div>
+      </section>
+      <section class="panel closed-message-panel" id="closedPanel" style="display:none">
+        <div id="closedMessageText" class="closed-message-text">Parking is closed</div>
       </section>
       <section class="panel carousel-panel">
         <div class="carousel-stage" id="carouselStage"><div class="carousel-empty" id="carouselEmpty">Нет рекламных файлов</div></div>
@@ -46,6 +49,7 @@
             <button class="tab-btn" data-tab="tariffs">Тарифы</button>
             <button class="tab-btn" data-tab="media">Реклама</button>
             <button class="tab-btn" data-tab="appearance">Оформление</button>
+            <button class="tab-btn" data-tab="mode">Режим работы</button>
             <button class="tab-btn" data-tab="diagnostics">Диагностика</button>
           </nav>
           <div class="settings-panels">
@@ -107,6 +111,33 @@
                 <label class="field"><span>Данные недоступны</span><input id="dangerColorInput" type="color" /></label>
                 <label class="field"><span>Фон: начало градиента</span><input id="backgroundStartInput" type="color" /></label>
                 <label class="field"><span>Фон: конец градиента</span><input id="backgroundEndInput" type="color" /></label>
+              </div>
+            </section>
+
+            <section class="tab-panel" data-panel="mode">
+              <div class="form-grid">
+                <label class="field wide">
+                  <span>Режим медиастенда</span>
+                  <select id="manualModeInput">
+                    <option value="normal">Нормальный</option>
+                    <option value="closed">Закрыто</option>
+                  </select>
+                  <small>Используется, если автоматическое расписание отключено</small>
+                </label>
+                <label class="field wide">
+                  <span>Автоматическое расписание</span>
+                  <select id="scheduleEnabledInput">
+                    <option value="false">Отключено</option>
+                    <option value="true">Включено</option>
+                  </select>
+                  <small>При включённом расписании оно имеет приоритет над ручным режимом</small>
+                </label>
+                <label class="field"><span>С</span><input id="scheduleFromInput" type="time" /></label>
+                <label class="field"><span>До</span><input id="scheduleToInput" type="time" /></label>
+                <label class="field wide">
+                  <span>Сообщение при закрытии</span>
+                  <input id="closedTextInput" type="text" placeholder="Parking is closed" />
+                </label>
               </div>
             </section>
 

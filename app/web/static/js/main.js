@@ -3,6 +3,7 @@ const state = {
   metadata: null,
   parkingTimer: null,
   carouselTimer: null,
+  modeCheckTimer: null,
   carouselIndex: 0,
   carouselItems: [],
   dirty: false,
@@ -13,6 +14,10 @@ const el = {
   placesList: document.getElementById('placesList'),
   hoursList: document.getElementById('hoursList'),
   tariffsList: document.getElementById('tariffsList'),
+  placesPanel: document.getElementById('placesPanel'),
+  tariffsPanel: document.getElementById('tariffsPanel'),
+  closedPanel: document.getElementById('closedPanel'),
+  closedMessageText: document.getElementById('closedMessageText'),
   carouselStage: document.getElementById('carouselStage'),
   carouselEmpty: document.getElementById('carouselEmpty'),
   settingsHotspot: document.getElementById('settingsHotspot'),
@@ -52,6 +57,11 @@ const fields = {
   dangerColorInput: document.getElementById('dangerColorInput'),
   backgroundStartInput: document.getElementById('backgroundStartInput'),
   backgroundEndInput: document.getElementById('backgroundEndInput'),
+  manualModeInput: document.getElementById('manualModeInput'),
+  scheduleEnabledInput: document.getElementById('scheduleEnabledInput'),
+  scheduleFromInput: document.getElementById('scheduleFromInput'),
+  scheduleToInput: document.getElementById('scheduleToInput'),
+  closedTextInput: document.getElementById('closedTextInput'),
 };
 
 const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
@@ -112,6 +122,28 @@ function renderPlaces(data) {
   }).join('');
 }
 
+function getEffectiveMode(config) {
+  const om = config.operating_mode;
+  if (!om) return 'normal';
+  if (om.schedule_enabled) {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const current = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    const from = om.schedule_from || '08:00';
+    const to = om.schedule_to || '22:00';
+    return (current >= from && current < to) ? 'normal' : 'closed';
+  }
+  return om.manual_mode || 'normal';
+}
+
+function applyDisplayMode(config) {
+  const isClosed = getEffectiveMode(config) === 'closed';
+  el.placesPanel.style.display = isClosed ? 'none' : '';
+  el.tariffsPanel.style.display = isClosed ? 'none' : '';
+  el.closedPanel.style.display = isClosed ? '' : 'none';
+  el.closedMessageText.textContent = config.operating_mode?.closed_text || 'Parking is closed';
+}
+
 function applyAppearance(config) {
   const a = config.appearance;
   document.documentElement.style.setProperty('--accent', a.accent_color);
@@ -127,6 +159,7 @@ function renderConfig(config) {
   renderStack(el.hoursList, config.content.working_hours, 'hours');
   renderStack(el.tariffsList, config.content.tariffs, 'tariffs');
   applyAppearance(config);
+  applyDisplayMode(config);
 }
 
 function fillForm(config, metadata) {
@@ -147,6 +180,12 @@ function fillForm(config, metadata) {
   fields.dangerColorInput.value = config.appearance.danger_color;
   fields.backgroundStartInput.value = config.appearance.background_start;
   fields.backgroundEndInput.value = config.appearance.background_end;
+  const om = config.operating_mode || {};
+  fields.manualModeInput.value = om.manual_mode || 'normal';
+  fields.scheduleEnabledInput.value = String(om.schedule_enabled ?? false);
+  fields.scheduleFromInput.value = om.schedule_from || '08:00';
+  fields.scheduleToInput.value = om.schedule_to || '22:00';
+  fields.closedTextInput.value = om.closed_text || 'Parking is closed';
   el.configPathPreview.textContent = metadata?.config_path || '—';
   el.loadedAtPreview.textContent = metadata?.loaded_at || '—';
   el.savedAtPreview.textContent = metadata?.saved_at || '—';
@@ -181,6 +220,13 @@ function readForm() {
       allowed_extensions: state.config.media.allowed_extensions,
     },
     ui: state.config.ui,
+    operating_mode: {
+      manual_mode: fields.manualModeInput.value,
+      schedule_enabled: fields.scheduleEnabledInput.value === 'true',
+      schedule_from: fields.scheduleFromInput.value || '08:00',
+      schedule_to: fields.scheduleToInput.value || '22:00',
+      closed_text: fields.closedTextInput.value.trim() || 'Parking is closed',
+    },
     appearance: {
       accent_color: fields.accentColorInput.value,
       success_color: fields.successColorInput.value,
@@ -351,6 +397,13 @@ function scheduleParkingReload() {
   state.parkingTimer = window.setInterval(loadParkingStatus, 15000);
 }
 
+function scheduleModeCheck() {
+  if (state.modeCheckTimer) window.clearInterval(state.modeCheckTimer);
+  state.modeCheckTimer = window.setInterval(() => {
+    if (state.config) applyDisplayMode(state.config);
+  }, 60000);
+}
+
 function openSettings() {
   state.settingsOpen = true;
   el.settingsBackdrop.style.display = 'flex';
@@ -454,6 +507,7 @@ async function bootstrap() {
     await loadRawYaml();
     await loadMedia();
     scheduleParkingReload();
+    scheduleModeCheck();
   } catch (error) {
     el.settingsStatus.textContent = `Ошибка инициализации: ${error.message}`;
   }

@@ -66,6 +66,14 @@ class AppearanceSection(BaseModel):
     background_end: str = "#071018"
 
 
+class OperatingModeSection(BaseModel):
+    manual_mode: Literal["normal", "closed"] = "normal"
+    schedule_enabled: bool = False
+    schedule_from: str = "08:00"
+    schedule_to: str = "22:00"
+    closed_text: str = "Parking is closed"
+
+
 class AppConfig(BaseModel):
     version: Literal[1] = 1
     app: AppSection = Field(default_factory=AppSection)
@@ -74,6 +82,7 @@ class AppConfig(BaseModel):
     media: MediaSection = Field(default_factory=MediaSection)
     ui: UiSection = Field(default_factory=UiSection)
     appearance: AppearanceSection = Field(default_factory=AppearanceSection)
+    operating_mode: OperatingModeSection = Field(default_factory=OperatingModeSection)
 
 
 class ParserTestRequest(BaseModel):

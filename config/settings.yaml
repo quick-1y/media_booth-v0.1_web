@@ -37,7 +37,13 @@ ui:
 appearance:
   accent_color: '#ffffff'
   success_color: '#00ff33'
-  warning_color: '#ffd05c'
+  warning_color: '#ff0000'
   danger_color: '#a81600'
   background_start: '#ff0505'
   background_end: '#0088ff'
+operating_mode:
+  manual_mode: normal
+  schedule_enabled: false
+  schedule_from: 08:00
+  schedule_to: '22:00'
+  closed_text: Парковка не работает

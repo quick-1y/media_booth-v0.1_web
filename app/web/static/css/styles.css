@@ -108,5 +108,9 @@ button, input, textarea { font: inherit; }
 .btn-secondary { background: rgba(255,255,255,0.08); color: var(--text); }
 .btn-muted { background: rgba(255,255,255,0.05); color: var(--muted); }
 
+/* Closed mode panel */
+.closed-message-panel { display: flex; align-items: center; justify-content: center; padding: 48px 32px; min-height: 280px; }
+.closed-message-text { font-size: clamp(56px, 7vw, 112px); font-weight: 900; text-align: center; color: var(--warn); line-height: 1.2; }
+
 /* Responsive */
 @media (max-width: 740px) { body { padding: 16px; } .settings-body { grid-template-columns: 1fr; } .settings-tabs { flex-direction: row; overflow: auto; border-right: 0; border-bottom: 1px solid rgba(255,255,255,0.08); } .form-grid, .form-grid.color-grid, .diagnostics-grid { grid-template-columns: 1fr; } .settings-footer { flex-direction: column; align-items: stretch; } .settings-actions .btn { width: 100%; } }
