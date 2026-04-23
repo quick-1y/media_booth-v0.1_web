@@ -80,21 +80,6 @@ const fields = {
 
 const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
 const tabPanels = Array.from(document.querySelectorAll('.tab-panel'));
-const rgbaControlIds = [
-  'freePlacesColor',
-  'noPlacesColor',
-  'noDataColor',
-  'hoursTextColor',
-  'tariffsTextColor',
-  'closedMessageColor',
-  'backgroundStart',
-  'backgroundEnd',
-  'panelBackgroundColor',
-  'cardBackgroundColor',
-  'borderColor',
-  'primaryTextColor',
-  'secondaryTextColor',
-];
 
 function escapeHtml(v) {
   return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
@@ -110,85 +95,28 @@ function toLines(text) {
   return String(text || '').split('\n').map(i => i.trim()).filter(Boolean);
 }
 
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function toHex(value) {
-  return clamp(Math.round(Number(value) || 0), 0, 255).toString(16).padStart(2, '0');
-}
-
-function parseColor(value) {
+function parseColorToHex(value) {
   const raw = String(value || '').trim();
   const hex = raw.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
   if (hex) {
     let h = hex[1];
     if (h.length === 3) h = h.split('').map(ch => ch + ch).join('');
-    return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16), a: 1 };
+    return `#${h.toLowerCase()}`;
   }
   const rgba = raw.match(/^rgba?\(([^)]+)\)$/i);
-  if (!rgba) return null;
+  if (!rgba) return '#000000';
   const parts = rgba[1].split(',').map(p => p.trim());
-  if (parts.length < 3) return null;
-  const r = clamp(Number(parts[0]), 0, 255);
-  const g = clamp(Number(parts[1]), 0, 255);
-  const b = clamp(Number(parts[2]), 0, 255);
-  const a = parts.length >= 4 ? clamp(Number(parts[3]), 0, 1) : 1;
-  if ([r, g, b, a].some(v => Number.isNaN(v))) return null;
-  return { r, g, b, a };
+  if (parts.length < 3) return '#000000';
+  const rgb = parts.slice(0, 3).map(v => Math.max(0, Math.min(255, Number(v) || 0)));
+  return `#${rgb.map(v => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
 }
 
-function rgbaString(color) {
-  const alpha = Number(color.a.toFixed(2)).toString();
-  return `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${alpha})`;
-}
-
-function syncRgbaControl(controlId) {
-  const input = document.getElementById(`${controlId}Input`);
-  const picker = document.getElementById(`${controlId}Picker`);
-  const alpha = document.getElementById(`${controlId}Alpha`);
-  const preview = document.getElementById(`${controlId}Preview`);
-  if (!input || !picker || !alpha || !preview) return;
-  const parsed = parseColor(input.value);
-  if (!parsed) {
-    preview.style.background = 'transparent';
-    preview.title = 'Некорректный цвет';
-    return;
-  }
-  picker.value = `#${toHex(parsed.r)}${toHex(parsed.g)}${toHex(parsed.b)}`;
-  alpha.value = String(parsed.a);
-  preview.style.background = rgbaString(parsed);
-  preview.title = rgbaString(parsed);
-}
-
-function initRgbaControls() {
-  rgbaControlIds.forEach(controlId => {
-    const input = document.getElementById(`${controlId}Input`);
-    const picker = document.getElementById(`${controlId}Picker`);
-    const alpha = document.getElementById(`${controlId}Alpha`);
-    if (!input || !picker || !alpha) return;
-
-    input.addEventListener('input', () => syncRgbaControl(controlId));
-    picker.addEventListener('input', () => {
-      const color = parseColor(input.value) || { r: 0, g: 0, b: 0, a: 1 };
-      const hex = picker.value.replace('#', '');
-      color.r = parseInt(hex.slice(0, 2), 16);
-      color.g = parseInt(hex.slice(2, 4), 16);
-      color.b = parseInt(hex.slice(4, 6), 16);
-      color.a = clamp(Number(alpha.value), 0, 1);
-      input.value = rgbaString(color);
-      syncRgbaControl(controlId);
-      markDirty();
-    });
-    alpha.addEventListener('input', () => {
-      const color = parseColor(input.value) || { r: 0, g: 0, b: 0, a: 1 };
-      color.a = clamp(Number(alpha.value), 0, 1);
-      input.value = rgbaString(color);
-      syncRgbaControl(controlId);
-      markDirty();
-    });
-    syncRgbaControl(controlId);
-  });
+function hexToRgba(value) {
+  const hex = parseColorToHex(value).replace('#', '');
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, 1)`;
 }
 
 async function api(url, options = {}) {
@@ -294,20 +222,19 @@ function fillForm(config, metadata) {
   fields.tariffsInput.value = config.content.tariffs.join('\n');
   fields.adsPathInput.value = config.media.ads_path;
   fields.carouselSecondsInput.value = config.media.carousel_seconds;
-  fields.freePlacesColorInput.value = config.appearance.free_places_color;
-  fields.noPlacesColorInput.value = config.appearance.no_places_color;
-  fields.noDataColorInput.value = config.appearance.no_data_color;
-  fields.hoursTextColorInput.value = config.appearance.hours_text_color;
-  fields.tariffsTextColorInput.value = config.appearance.tariffs_text_color;
-  fields.closedMessageColorInput.value = config.appearance.closed_message_color;
-  fields.panelBackgroundColorInput.value = config.appearance.panel_background_color;
-  fields.cardBackgroundColorInput.value = config.appearance.card_background_color;
-  fields.borderColorInput.value = config.appearance.border_color;
-  fields.primaryTextColorInput.value = config.appearance.primary_text_color;
-  fields.secondaryTextColorInput.value = config.appearance.secondary_text_color;
-  fields.backgroundStartInput.value = config.appearance.background_start;
-  fields.backgroundEndInput.value = config.appearance.background_end;
-  rgbaControlIds.forEach(syncRgbaControl);
+  fields.freePlacesColorInput.value = parseColorToHex(config.appearance.free_places_color);
+  fields.noPlacesColorInput.value = parseColorToHex(config.appearance.no_places_color);
+  fields.noDataColorInput.value = parseColorToHex(config.appearance.no_data_color);
+  fields.hoursTextColorInput.value = parseColorToHex(config.appearance.hours_text_color);
+  fields.tariffsTextColorInput.value = parseColorToHex(config.appearance.tariffs_text_color);
+  fields.closedMessageColorInput.value = parseColorToHex(config.appearance.closed_message_color);
+  fields.panelBackgroundColorInput.value = parseColorToHex(config.appearance.panel_background_color);
+  fields.cardBackgroundColorInput.value = parseColorToHex(config.appearance.card_background_color);
+  fields.borderColorInput.value = parseColorToHex(config.appearance.border_color);
+  fields.primaryTextColorInput.value = parseColorToHex(config.appearance.primary_text_color);
+  fields.secondaryTextColorInput.value = parseColorToHex(config.appearance.secondary_text_color);
+  fields.backgroundStartInput.value = parseColorToHex(config.appearance.background_start);
+  fields.backgroundEndInput.value = parseColorToHex(config.appearance.background_end);
   const b = config.ui?.blocks || {};
   fields.showHoursBlockInput.checked = b.show_working_hours ?? true;
   fields.showPlacesBlockInput.checked = b.show_free_spaces ?? true;
@@ -370,19 +297,19 @@ function readForm() {
       closed_text: fields.closedTextInput.value.trim() || 'Parking is closed',
     },
     appearance: {
-      free_places_color: fields.freePlacesColorInput.value,
-      no_places_color: fields.noPlacesColorInput.value,
-      no_data_color: fields.noDataColorInput.value,
-      hours_text_color: fields.hoursTextColorInput.value,
-      tariffs_text_color: fields.tariffsTextColorInput.value,
-      closed_message_color: fields.closedMessageColorInput.value,
-      panel_background_color: fields.panelBackgroundColorInput.value.trim(),
-      card_background_color: fields.cardBackgroundColorInput.value.trim(),
-      border_color: fields.borderColorInput.value.trim(),
-      primary_text_color: fields.primaryTextColorInput.value,
-      secondary_text_color: fields.secondaryTextColorInput.value,
-      background_start: fields.backgroundStartInput.value,
-      background_end: fields.backgroundEndInput.value,
+      free_places_color: hexToRgba(fields.freePlacesColorInput.value),
+      no_places_color: hexToRgba(fields.noPlacesColorInput.value),
+      no_data_color: hexToRgba(fields.noDataColorInput.value),
+      hours_text_color: hexToRgba(fields.hoursTextColorInput.value),
+      tariffs_text_color: hexToRgba(fields.tariffsTextColorInput.value),
+      closed_message_color: hexToRgba(fields.closedMessageColorInput.value),
+      panel_background_color: hexToRgba(fields.panelBackgroundColorInput.value),
+      card_background_color: hexToRgba(fields.cardBackgroundColorInput.value),
+      border_color: hexToRgba(fields.borderColorInput.value),
+      primary_text_color: hexToRgba(fields.primaryTextColorInput.value),
+      secondary_text_color: hexToRgba(fields.secondaryTextColorInput.value),
+      background_start: hexToRgba(fields.backgroundStartInput.value),
+      background_end: hexToRgba(fields.backgroundEndInput.value),
     },
   };
 }
@@ -667,7 +594,6 @@ function bindSettingsAccess() {
 }
 
 async function bootstrap() {
-  initRgbaControls();
   bindTabs();
   bindDirtyTracking();
   bindSettingsAccess();
