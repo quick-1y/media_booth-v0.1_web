@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Центр управления стендами</title>
+    <link rel="stylesheet" href="/static/css/management.css" />
+  </head>
+  <body>
+    <div class="mgmt-layout">
+      <header class="mgmt-header">
+        <div>
+          <div class="mgmt-eyebrow">Медиастенды</div>
+          <h1 class="mgmt-title">Центр управления</h1>
+        </div>
+      </header>
+
+      <div class="mgmt-card">
+        <h2 class="mgmt-section-title">Добавить стенд</h2>
+        <div class="mgmt-create-form">
+          <input
+            id="boothNameInput"
+            type="text"
+            class="mgmt-input"
+            placeholder="Название стенда"
+            maxlength="100"
+          />
+          <button id="createBoothBtn" class="mgmt-btn mgmt-btn-primary">Создать</button>
+        </div>
+        <div id="createStatus" class="mgmt-status"></div>
+      </div>
+
+      <div class="mgmt-card">
+        <h2 class="mgmt-section-title">Стенды</h2>
+        <div id="boothsList" class="booths-list">
+          <div class="booths-empty">Загрузка…</div>
+        </div>
+      </div>
+    </div>
+    <script src="/static/js/management.js" defer></script>
+  </body>
+</html>

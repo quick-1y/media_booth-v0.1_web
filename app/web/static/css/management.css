@@ -1,0 +1,211 @@
+:root {
+  --bg-start: #0b1620;
+  --bg-end: #071018;
+  --panel: rgba(13, 27, 39, 0.92);
+  --line: rgba(142, 188, 224, 0.14);
+  --text: #f4f8fb;
+  --muted: #9fb3c4;
+  --accent: #2d7dd2;
+  --danger: rgba(255, 140, 122, 0.9);
+  --danger-bg: rgba(255, 140, 122, 0.12);
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  --radius: 20px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  background: linear-gradient(180deg, var(--bg-start) 0%, var(--bg-end) 100%);
+  color: var(--text);
+  font-family: Inter, Arial, sans-serif;
+}
+
+body { padding: 32px 24px; }
+
+button, input { font: inherit; }
+
+.mgmt-layout {
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Header */
+.mgmt-header {
+  padding: 8px 0 16px;
+}
+
+.mgmt-eyebrow {
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.mgmt-title {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+/* Card */
+.mgmt-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  padding: 24px 28px;
+}
+
+.mgmt-section-title {
+  margin: 0 0 18px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Create form */
+.mgmt-create-form {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.mgmt-input {
+  flex: 1;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 13px 16px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 150ms;
+}
+
+.mgmt-input:focus {
+  border-color: rgba(45, 125, 210, 0.6);
+}
+
+.mgmt-input::placeholder {
+  color: rgba(159, 179, 196, 0.5);
+}
+
+.mgmt-btn {
+  border: 0;
+  border-radius: 14px;
+  padding: 13px 20px;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  transition: opacity 150ms, background 150ms;
+  white-space: nowrap;
+}
+
+.mgmt-btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.mgmt-btn-primary:hover { background: #3a8ae8; }
+.mgmt-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.mgmt-btn-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.mgmt-btn-danger:hover { background: rgba(255, 140, 122, 0.22); }
+
+.mgmt-btn-open {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  text-decoration: none;
+  display: inline-block;
+}
+
+.mgmt-btn-open:hover { background: rgba(255, 255, 255, 0.13); }
+
+/* Status line */
+.mgmt-status {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 18px;
+}
+
+.mgmt-status.error { color: var(--danger); }
+.mgmt-status.ok { color: #4be28a; }
+
+/* Booths list */
+.booths-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.booths-empty {
+  color: var(--muted);
+  font-size: 14px;
+  padding: 12px 0;
+  text-align: center;
+}
+
+.booth-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.booth-id {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 4px 9px;
+  flex-shrink: 0;
+}
+
+.booth-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 700;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.booth-meta {
+  font-size: 12px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.booth-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  body { padding: 20px 16px; }
+  .mgmt-create-form { flex-direction: column; align-items: stretch; }
+  .booth-row { flex-wrap: wrap; }
+  .booth-meta { display: none; }
+}

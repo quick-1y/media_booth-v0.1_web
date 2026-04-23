@@ -10,8 +10,6 @@ COPY pyproject.toml README.md ./
 RUN poetry install --only main --no-root
 
 COPY app ./app
-COPY config ./config
-COPY data /data
 
 EXPOSE 8000
 

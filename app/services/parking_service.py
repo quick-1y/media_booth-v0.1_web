@@ -3,7 +3,6 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Callable
 import httpx
-from app.schemas.config import AppConfig
 
 _TIMEOUT = 10
 _REFRESH_SECONDS = 15
@@ -11,14 +10,16 @@ _VERIFY_TLS = True
 
 
 class ParkingService:
-    def __init__(self, settings_factory: Callable[[], object]) -> None:
+    def __init__(self, settings_factory: Callable) -> None:
         self._settings_factory = settings_factory
-        self._cache_lock = asyncio.Lock()
-        self._cached_payload: dict | None = None
-        self._cached_until: datetime | None = None
+        self._locks: dict[int, asyncio.Lock] = {}
+        self._cached: dict[int, dict] = {}
+        self._until: dict[int, datetime] = {}
 
-    def _settings(self) -> AppConfig:
-        return self._settings_factory().get()
+    def _lock(self, booth_id: int) -> asyncio.Lock:
+        if booth_id not in self._locks:
+            self._locks[booth_id] = asyncio.Lock()
+        return self._locks[booth_id]
 
     @staticmethod
     def _build_url(server: str, path: str, token: str) -> str:
@@ -67,45 +68,45 @@ class ParkingService:
             response.raise_for_status()
             return response.json()
 
-    async def fetch_status(self, force: bool = False) -> dict:
-        config = self._settings()
+    async def fetch_status(self, booth_id: int, force: bool = False) -> dict:
+        config = await self._settings_factory().get(booth_id)
         parser = config.parking.parser
         url = self._build_url(parser.server, parser.path, parser.token)
         if not url:
-            return {"success": False, "levels": [], "total_free": 0, "partial": False, "error": "Парсер не настроен"}
-        async with self._cache_lock:
+            return {
+                "success": False, "levels": [], "total_free": 0,
+                "partial": False, "error": "Парсер не настроен",
+            }
+        async with self._lock(booth_id):
             now = datetime.now(timezone.utc)
             if (
                 not force
-                and self._cached_payload is not None
-                and self._cached_until is not None
-                and now < self._cached_until
+                and booth_id in self._cached
+                and booth_id in self._until
+                and now < self._until[booth_id]
             ):
-                return {**self._cached_payload, "cached": True}
+                return {**self._cached[booth_id], "cached": True}
             try:
                 payload = await self._fetch_json(url)
                 data = self._normalize(payload)
                 data["fetched_at"] = now.isoformat()
                 data["source_url"] = url
                 data["cached"] = False
-                self._cached_payload = data
-                self._cached_until = now + timedelta(seconds=_REFRESH_SECONDS)
+                self._cached[booth_id] = data
+                self._until[booth_id] = now + timedelta(seconds=_REFRESH_SECONDS)
                 return data
             except Exception as exc:
-                if self._cached_payload is not None:
+                if booth_id in self._cached:
                     return {
-                        **self._cached_payload,
+                        **self._cached[booth_id],
                         "success": False,
                         "stale": True,
                         "cached": True,
                         "error": f"{type(exc).__name__}: {exc}",
                     }
                 return {
-                    "success": False,
-                    "levels": [],
-                    "total_free": 0,
-                    "partial": False,
-                    "error": f"{type(exc).__name__}: {exc}",
+                    "success": False, "levels": [], "total_free": 0,
+                    "partial": False, "error": f"{type(exc).__name__}: {exc}",
                 }
 
     async def test_parser(self, server: str, path: str, token: str) -> dict:

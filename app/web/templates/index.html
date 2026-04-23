@@ -89,7 +89,6 @@
 
             <section class="tab-panel" data-panel="media">
               <div class="form-grid">
-                <label class="field"><span>Папка с рекламой на сервере</span><input id="adsPathInput" type="text" placeholder="/data/ads" /></label>
                 <label class="field"><span>Время показа одного слайда, сек</span><input id="carouselSecondsInput" type="number" min="2" max="120" /></label>
                 <div class="field wide">
                   <span>Добавить файл</span>
@@ -153,11 +152,11 @@
 
             <section class="tab-panel" data-panel="diagnostics">
               <div class="diagnostics-grid">
-                <div class="diag-card"><div class="diag-title">Путь к конфигу</div><pre id="configPathPreview">—</pre></div>
-                <div class="diag-card"><div class="diag-title">Последняя загрузка</div><pre id="loadedAtPreview">—</pre></div>
+                <div class="diag-card"><div class="diag-title">Стенд</div><pre id="configPathPreview">—</pre></div>
+                <div class="diag-card"><div class="diag-title">Создан</div><pre id="loadedAtPreview">—</pre></div>
                 <div class="diag-card"><div class="diag-title">Последнее сохранение</div><pre id="savedAtPreview">—</pre></div>
                 <div class="diag-card wide"><div class="diag-title">Тест парсера</div><pre id="parserTestOutput">Нажмите «Проверить парсер»</pre></div>
-                <div class="diag-card wide"><div class="diag-title">Сырой YAML</div><pre id="rawYamlOutput">Загрузка…</pre></div>
+                <div class="diag-card wide"><div class="diag-title">Конфигурация (JSON)</div><pre id="rawYamlOutput">Загрузка…</pre></div>
               </div>
             </section>
 
@@ -166,7 +165,7 @@
         <div class="settings-footer">
           <div class="settings-status" id="settingsStatus">Настройки ещё не загружены</div>
           <div class="settings-actions">
-            <button class="btn btn-muted" id="reloadDiskButton">Перечитать YAML</button>
+            <button class="btn btn-muted" id="reloadDiskButton">Обновить</button>
             <button class="btn btn-muted" id="testParserButton">Проверить парсер</button>
             <button class="btn btn-secondary" id="cancelSettingsButton">Отмена</button>
             <button class="btn btn-primary" id="saveSettingsButton">Сохранить</button>
@@ -174,6 +173,7 @@
         </div>
       </section>
     </div>
+    <script>const BOOTH_ID = {{ booth_id }};</script>
     <script src="/static/js/main.js" defer></script>
   </body>
 </html>

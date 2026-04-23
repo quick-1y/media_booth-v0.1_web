@@ -52,7 +52,6 @@ const fields = {
   parserTokenInput: document.getElementById('parserTokenInput'),
   workingHoursInput: document.getElementById('workingHoursInput'),
   tariffsInput: document.getElementById('tariffsInput'),
-  adsPathInput: document.getElementById('adsPathInput'),
   carouselSecondsInput: document.getElementById('carouselSecondsInput'),
   freePlacesColorInput: document.getElementById('freePlacesColorInput'),
   noPlacesColorInput: document.getElementById('noPlacesColorInput'),
@@ -220,7 +219,6 @@ function fillForm(config, metadata) {
   fields.parserTokenInput.value = config.parking.parser.token;
   fields.workingHoursInput.value = config.content.working_hours.join('\n');
   fields.tariffsInput.value = config.content.tariffs.join('\n');
-  fields.adsPathInput.value = config.media.ads_path;
   fields.carouselSecondsInput.value = config.media.carousel_seconds;
   fields.freePlacesColorInput.value = parseColorToHex(config.appearance.free_places_color);
   fields.noPlacesColorInput.value = parseColorToHex(config.appearance.no_places_color);
@@ -246,10 +244,10 @@ function fillForm(config, metadata) {
   fields.scheduleFromInput.value = om.schedule_from || '08:00';
   fields.scheduleToInput.value = om.schedule_to || '22:00';
   fields.closedTextInput.value = om.closed_text || 'Parking is closed';
-  el.configPathPreview.textContent = metadata?.config_path || '—';
+  el.configPathPreview.textContent = `Стенд #${BOOTH_ID}`;
   el.loadedAtPreview.textContent = metadata?.loaded_at || '—';
   el.savedAtPreview.textContent = metadata?.saved_at || '—';
-  el.settingsMetaLine.textContent = metadata?.config_path ? `Файл: ${metadata.config_path}` : 'Файл конфигурации не найден';
+  el.settingsMetaLine.textContent = `Стенд #${BOOTH_ID}`;
   state.dirty = false;
   updateDirtyState();
 }
@@ -275,9 +273,9 @@ function readForm() {
       tariffs: toLines(fields.tariffsInput.value),
     },
     media: {
-      ads_path: fields.adsPathInput.value.trim() || '/data/ads',
+      ads_path: state.config?.media?.ads_path || '/data/ads',
       carousel_seconds: Number(fields.carouselSecondsInput.value || 8),
-      allowed_extensions: state.config.media.allowed_extensions,
+      allowed_extensions: state.config?.media?.allowed_extensions || [],
     },
     ui: {
       settings_access: state.config.ui.settings_access,
@@ -316,13 +314,15 @@ function readForm() {
 
 function updateDirtyState() {
   el.saveSettingsButton.disabled = !state.dirty;
-  el.settingsStatus.textContent = state.dirty ? 'Есть несохранённые изменения' : 'Настройки синхронизированы с файлом';
+  el.settingsStatus.textContent = state.dirty
+    ? 'Есть несохранённые изменения'
+    : 'Настройки синхронизированы с базой данных';
 }
 
 function markDirty() { state.dirty = true; updateDirtyState(); }
 
 async function loadSettings() {
-  const data = await api('/api/settings');
+  const data = await api(`/api/booths/${BOOTH_ID}/settings`);
   state.config = data.config;
   state.metadata = data.metadata;
   renderConfig(state.config);
@@ -330,9 +330,10 @@ async function loadSettings() {
   return data;
 }
 
-async function loadRawYaml() {
-  const data = await api('/api/settings/raw');
-  el.rawYamlOutput.textContent = data.raw_yaml || 'Пустой YAML';
+function loadRawJson() {
+  el.rawYamlOutput.textContent = state.config
+    ? JSON.stringify(state.config, null, 2)
+    : '—';
 }
 
 function clearCarousel() {
@@ -402,13 +403,13 @@ function renderCarousel(items) {
 }
 
 async function loadMedia() {
-  const data = await api('/api/media/items');
+  const data = await api(`/api/booths/${BOOTH_ID}/media/items`);
   renderCarousel(data.items || []);
 }
 
 async function loadMediaFiles() {
   try {
-    const data = await api('/api/media/items');
+    const data = await api(`/api/booths/${BOOTH_ID}/media/items`);
     const items = data.items || [];
     if (!items.length) {
       el.mediaFilesList.innerHTML = '<div class="media-files-empty">Нет файлов в папке</div>';
@@ -442,7 +443,7 @@ async function uploadMedia() {
   el.uploadMediaButton.disabled = true;
   el.settingsStatus.textContent = 'Загрузка файла…';
   try {
-    const response = await fetch('/api/media/upload', { method: 'POST', body: formData });
+    const response = await fetch(`/api/booths/${BOOTH_ID}/media/upload`, { method: 'POST', body: formData });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
       throw new Error(data.detail || `HTTP ${response.status}`);
@@ -462,7 +463,7 @@ async function deleteMedia(name) {
   if (!confirm(`Удалить файл «${name}»?`)) return;
   el.settingsStatus.textContent = 'Удаление…';
   try {
-    await api(`/api/media/file/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    await api(`/api/booths/${BOOTH_ID}/media/file/${encodeURIComponent(name)}`, { method: 'DELETE' });
     await loadMediaFiles();
     await loadMedia();
     el.settingsStatus.textContent = `Файл «${name}» удалён`;
@@ -471,17 +472,10 @@ async function deleteMedia(name) {
   }
 }
 
-function formatLocalDate(value) {
-  if (!value) return '—';
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString('ru-RU');
-}
-
 async function loadParkingStatus() {
   try {
-    const data = await api('/api/parking/status');
+    const data = await api(`/api/booths/${BOOTH_ID}/parking/status`);
     renderPlaces(data);
-    const fetchedAt = data.fetched_at || data.generated_at;
   } catch (error) {
     renderPlaces({ levels: [], total_free: 0 });
   }
@@ -515,16 +509,17 @@ function switchTab(name) {
   tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
   tabPanels.forEach(panel => panel.classList.toggle('active', panel.dataset.panel === name));
   if (name === 'media') loadMediaFiles();
+  if (name === 'diagnostics') loadRawJson();
 }
 
 async function saveSettings() {
   try {
-    const data = await api('/api/settings', { method: 'PUT', body: JSON.stringify(readForm()) });
+    const data = await api(`/api/booths/${BOOTH_ID}/settings`, { method: 'PUT', body: JSON.stringify(readForm()) });
     state.config = data.config;
     state.metadata = data.metadata;
     renderConfig(state.config);
     fillForm(state.config, state.metadata);
-    await loadRawYaml();
+    loadRawJson();
     await loadMedia();
     scheduleParkingReload();
     el.settingsStatus.textContent = data.message || 'Настройки сохранены';
@@ -533,25 +528,25 @@ async function saveSettings() {
   }
 }
 
-async function reloadFromDisk() {
+async function reloadFromDB() {
   try {
-    const data = await api('/api/settings/reload', { method: 'POST' });
+    const data = await api(`/api/booths/${BOOTH_ID}/settings`);
     state.config = data.config;
     state.metadata = data.metadata;
     renderConfig(state.config);
     fillForm(state.config, state.metadata);
-    await loadRawYaml();
+    loadRawJson();
     await loadMedia();
     scheduleParkingReload();
-    el.settingsStatus.textContent = data.message || 'YAML перечитан';
+    el.settingsStatus.textContent = 'Настройки обновлены';
   } catch (error) {
-    el.settingsStatus.textContent = `Ошибка перечитывания: ${error.message}`;
+    el.settingsStatus.textContent = `Ошибка обновления: ${error.message}`;
   }
 }
 
 async function testParser() {
   try {
-    const data = await api('/api/parking/test', {
+    const data = await api(`/api/booths/${BOOTH_ID}/parking/test`, {
       method: 'POST',
       body: JSON.stringify({
         server: fields.parserServerInput.value.trim(),
@@ -588,7 +583,7 @@ function bindSettingsAccess() {
     if (event.key === 'Escape' && state.settingsOpen) { closeSettings(); }
   });
   el.saveSettingsButton.addEventListener('click', saveSettings);
-  el.reloadDiskButton.addEventListener('click', reloadFromDisk);
+  el.reloadDiskButton.addEventListener('click', reloadFromDB);
   el.testParserButton.addEventListener('click', testParser);
   el.uploadMediaButton.addEventListener('click', uploadMedia);
 }
@@ -600,7 +595,7 @@ async function bootstrap() {
   switchTab('general');
   try {
     await loadSettings();
-    await loadRawYaml();
+    loadRawJson();
     await loadMedia();
     scheduleParkingReload();
     scheduleModeCheck();
