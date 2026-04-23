@@ -66,19 +66,19 @@ class UiSection(BaseModel):
 
 
 class AppearanceSection(BaseModel):
-    free_places_color: str = Field(default="#4be28a", validation_alias=AliasChoices("free_places_color", "success_color"))
-    no_places_color: str = Field(default="#ffd05c", validation_alias=AliasChoices("no_places_color", "warning_color"))
-    no_data_color: str = Field(default="#ff8c7a", validation_alias=AliasChoices("no_data_color", "danger_color"))
-    hours_text_color: str = "#f4f8fb"
-    tariffs_text_color: str = "#f4f8fb"
-    closed_message_color: str = "#ffd05c"
+    free_places_color: str = Field(default="rgba(75, 226, 138, 1)", validation_alias=AliasChoices("free_places_color", "success_color"))
+    no_places_color: str = Field(default="rgba(255, 208, 92, 1)", validation_alias=AliasChoices("no_places_color", "warning_color"))
+    no_data_color: str = Field(default="rgba(255, 140, 122, 1)", validation_alias=AliasChoices("no_data_color", "danger_color"))
+    hours_text_color: str = "rgba(244, 248, 251, 1)"
+    tariffs_text_color: str = "rgba(244, 248, 251, 1)"
+    closed_message_color: str = "rgba(255, 208, 92, 1)"
     panel_background_color: str = "rgba(13, 27, 39, 0.88)"
     card_background_color: str = "rgba(18, 38, 55, 0.82)"
     border_color: str = "rgba(142, 188, 224, 0.16)"
-    primary_text_color: str = "#f4f8fb"
-    secondary_text_color: str = "#9fb3c4"
-    background_start: str = "#0b1620"
-    background_end: str = "#071018"
+    primary_text_color: str = "rgba(244, 248, 251, 1)"
+    secondary_text_color: str = "rgba(159, 179, 196, 1)"
+    background_start: str = "rgba(11, 22, 32, 1)"
+    background_end: str = "rgba(7, 16, 24, 1)"
 
 
 class OperatingModeSection(BaseModel):

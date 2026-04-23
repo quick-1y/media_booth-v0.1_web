@@ -80,6 +80,21 @@ const fields = {
 
 const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
 const tabPanels = Array.from(document.querySelectorAll('.tab-panel'));
+const rgbaControlIds = [
+  'freePlacesColor',
+  'noPlacesColor',
+  'noDataColor',
+  'hoursTextColor',
+  'tariffsTextColor',
+  'closedMessageColor',
+  'backgroundStart',
+  'backgroundEnd',
+  'panelBackgroundColor',
+  'cardBackgroundColor',
+  'borderColor',
+  'primaryTextColor',
+  'secondaryTextColor',
+];
 
 function escapeHtml(v) {
   return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
@@ -93,6 +108,87 @@ function formatBytes(bytes) {
 
 function toLines(text) {
   return String(text || '').split('\n').map(i => i.trim()).filter(Boolean);
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function toHex(value) {
+  return clamp(Math.round(Number(value) || 0), 0, 255).toString(16).padStart(2, '0');
+}
+
+function parseColor(value) {
+  const raw = String(value || '').trim();
+  const hex = raw.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (hex) {
+    let h = hex[1];
+    if (h.length === 3) h = h.split('').map(ch => ch + ch).join('');
+    return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16), a: 1 };
+  }
+  const rgba = raw.match(/^rgba?\(([^)]+)\)$/i);
+  if (!rgba) return null;
+  const parts = rgba[1].split(',').map(p => p.trim());
+  if (parts.length < 3) return null;
+  const r = clamp(Number(parts[0]), 0, 255);
+  const g = clamp(Number(parts[1]), 0, 255);
+  const b = clamp(Number(parts[2]), 0, 255);
+  const a = parts.length >= 4 ? clamp(Number(parts[3]), 0, 1) : 1;
+  if ([r, g, b, a].some(v => Number.isNaN(v))) return null;
+  return { r, g, b, a };
+}
+
+function rgbaString(color) {
+  const alpha = Number(color.a.toFixed(2)).toString();
+  return `rgba(${Math.round(color.r)}, ${Math.round(color.g)}, ${Math.round(color.b)}, ${alpha})`;
+}
+
+function syncRgbaControl(controlId) {
+  const input = document.getElementById(`${controlId}Input`);
+  const picker = document.getElementById(`${controlId}Picker`);
+  const alpha = document.getElementById(`${controlId}Alpha`);
+  const preview = document.getElementById(`${controlId}Preview`);
+  if (!input || !picker || !alpha || !preview) return;
+  const parsed = parseColor(input.value);
+  if (!parsed) {
+    preview.style.background = 'transparent';
+    preview.title = 'Некорректный цвет';
+    return;
+  }
+  picker.value = `#${toHex(parsed.r)}${toHex(parsed.g)}${toHex(parsed.b)}`;
+  alpha.value = String(parsed.a);
+  preview.style.background = rgbaString(parsed);
+  preview.title = rgbaString(parsed);
+}
+
+function initRgbaControls() {
+  rgbaControlIds.forEach(controlId => {
+    const input = document.getElementById(`${controlId}Input`);
+    const picker = document.getElementById(`${controlId}Picker`);
+    const alpha = document.getElementById(`${controlId}Alpha`);
+    if (!input || !picker || !alpha) return;
+
+    input.addEventListener('input', () => syncRgbaControl(controlId));
+    picker.addEventListener('input', () => {
+      const color = parseColor(input.value) || { r: 0, g: 0, b: 0, a: 1 };
+      const hex = picker.value.replace('#', '');
+      color.r = parseInt(hex.slice(0, 2), 16);
+      color.g = parseInt(hex.slice(2, 4), 16);
+      color.b = parseInt(hex.slice(4, 6), 16);
+      color.a = clamp(Number(alpha.value), 0, 1);
+      input.value = rgbaString(color);
+      syncRgbaControl(controlId);
+      markDirty();
+    });
+    alpha.addEventListener('input', () => {
+      const color = parseColor(input.value) || { r: 0, g: 0, b: 0, a: 1 };
+      color.a = clamp(Number(alpha.value), 0, 1);
+      input.value = rgbaString(color);
+      syncRgbaControl(controlId);
+      markDirty();
+    });
+    syncRgbaControl(controlId);
+  });
 }
 
 async function api(url, options = {}) {
@@ -211,6 +307,7 @@ function fillForm(config, metadata) {
   fields.secondaryTextColorInput.value = config.appearance.secondary_text_color;
   fields.backgroundStartInput.value = config.appearance.background_start;
   fields.backgroundEndInput.value = config.appearance.background_end;
+  rgbaControlIds.forEach(syncRgbaControl);
   const b = config.ui?.blocks || {};
   fields.showHoursBlockInput.checked = b.show_working_hours ?? true;
   fields.showPlacesBlockInput.checked = b.show_free_spaces ?? true;
@@ -570,6 +667,7 @@ function bindSettingsAccess() {
 }
 
 async function bootstrap() {
+  initRgbaControls();
   bindTabs();
   bindDirtyTracking();
   bindSettingsAccess();

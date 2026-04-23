@@ -97,6 +97,11 @@ button, input, textarea, select { font: inherit; }
 .field input[type="color"] { width: 100%; height: 48px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.04); border-radius: 14px; cursor: pointer; }
 .field select { cursor: pointer; }
 .field textarea { resize: vertical; min-height: 112px; }
+.rgba-control { display: flex; flex-direction: column; gap: 10px; }
+.rgba-tools { display: grid; grid-template-columns: 52px 1fr 42px; gap: 8px; align-items: center; }
+.rgba-tools input[type="color"] { width: 52px; height: 38px; padding: 3px; border-radius: 10px; }
+.rgba-tools input[type="range"] { width: 100%; accent-color: #7cb6ff; }
+.color-preview { width: 100%; height: 38px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.18); background: transparent; }
 
 /* Toggle switch */
 .field.field-switch { flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.10); border-radius: 14px; cursor: pointer; user-select: none; }
