@@ -273,13 +273,10 @@ function readForm() {
       tariffs: toLines(fields.tariffsInput.value),
     },
     media: {
-      ads_path: state.config?.media?.ads_path || '/data/ads',
       carousel_seconds: Number(fields.carouselSecondsInput.value || 8),
-      allowed_extensions: state.config?.media?.allowed_extensions || [],
     },
     ui: {
       settings_access: state.config.ui.settings_access,
-      diagnostics: state.config.ui.diagnostics,
       blocks: {
         show_working_hours: fields.showHoursBlockInput.checked,
         show_free_spaces: fields.showPlacesBlockInput.checked,

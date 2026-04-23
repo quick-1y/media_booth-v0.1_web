@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "parking-media-wall"
+name = "media-booth-manager"
 version = "0.2.0"
-description = "Multi-booth media wall manager with PostgreSQL settings storage"
-authors = ["OpenAI <support@openai.com>"]
+description = "Централизованная система управления медиастендами на базе FastAPI и PostgreSQL"
+authors = ["User"]
 readme = "README.md"
 packages = [{ include = "app" }]
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Literal
-from pydantic import AliasChoices, BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class AppSection(BaseModel):
@@ -21,34 +21,22 @@ class ParkingSection(BaseModel):
 
 class ContentSection(BaseModel):
     working_hours: list[str] = Field(default_factory=lambda: ["Ежедневно: 08:00–22:00"])
-    tariffs: list[str] = Field(default_factory=lambda: ["Первые 2 часа бесплатно", "С 3-го часа — 50 рублей/час"])
+    tariffs: list[str] = Field(
+        default_factory=lambda: ["Первые 2 часа бесплатно", "С 3-го часа — 50 рублей/час"]
+    )
 
     @field_validator("working_hours", "tariffs")
     @classmethod
-    def norm(cls, values: list[str]) -> list[str]:
-        return [str(v).strip() for v in values if str(v).strip()]
+    def _strip_empty(cls, values: list[str]) -> list[str]:
+        return [v.strip() for v in values if str(v).strip()]
 
 
 class MediaSection(BaseModel):
-    ads_path: str = "/data/ads"
     carousel_seconds: int = Field(default=8, ge=2, le=120)
-    allowed_extensions: list[str] = Field(
-        default_factory=lambda: [".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".webm", ".ogg"]
-    )
-
-    @field_validator("allowed_extensions")
-    @classmethod
-    def norm_list(cls, values: list[str]) -> list[str]:
-        return [str(v).strip() for v in values if str(v).strip()]
 
 
 class SettingsAccessSection(BaseModel):
     hidden_hotspot_enabled: bool = True
-
-
-class DiagnosticsSection(BaseModel):
-    show_raw_yaml_preview: bool = True
-    show_parser_test: bool = True
 
 
 class BlocksSection(BaseModel):
@@ -60,14 +48,13 @@ class BlocksSection(BaseModel):
 
 class UiSection(BaseModel):
     settings_access: SettingsAccessSection = Field(default_factory=SettingsAccessSection)
-    diagnostics: DiagnosticsSection = Field(default_factory=DiagnosticsSection)
     blocks: BlocksSection = Field(default_factory=BlocksSection)
 
 
 class AppearanceSection(BaseModel):
-    free_places_color: str = Field(default="rgba(75, 226, 138, 1)", validation_alias=AliasChoices("free_places_color", "success_color"))
-    no_places_color: str = Field(default="rgba(255, 208, 92, 1)", validation_alias=AliasChoices("no_places_color", "warning_color"))
-    no_data_color: str = Field(default="rgba(255, 140, 122, 1)", validation_alias=AliasChoices("no_data_color", "danger_color"))
+    free_places_color: str = "rgba(75, 226, 138, 1)"
+    no_places_color: str = "rgba(255, 208, 92, 1)"
+    no_data_color: str = "rgba(255, 140, 122, 1)"
     hours_text_color: str = "rgba(244, 248, 251, 1)"
     tariffs_text_color: str = "rgba(244, 248, 251, 1)"
     closed_message_color: str = "rgba(255, 208, 92, 1)"

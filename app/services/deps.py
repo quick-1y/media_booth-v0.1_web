@@ -1,13 +1,13 @@
 from functools import lru_cache
-from app.services.booth_service import BoothsService
+from app.services.booth_service import BoothService
 from app.services.settings_service import BoothSettingsService
 from app.services.parking_service import ParkingService
 from app.services.media_service import MediaService
 
 
 @lru_cache(maxsize=1)
-def get_booths_service() -> BoothsService:
-    return BoothsService()
+def get_booth_service() -> BoothService:
+    return BoothService()
 
 
 @lru_cache(maxsize=1)

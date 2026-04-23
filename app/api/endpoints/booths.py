@@ -4,7 +4,7 @@ from fastapi.responses import FileResponse
 from app.schemas.config import AppConfig, ParserTestRequest
 from app.schemas.booth import BoothCreate, BoothRename
 from app.services.deps import (
-    get_booths_service,
+    get_booth_service,
     get_settings_service,
     get_parking_service,
     get_media_service,
@@ -13,49 +13,44 @@ from app.services.deps import (
 router = APIRouter()
 
 
-# ─── Booth CRUD ───────────────────────────────────────────────────────────────
+# ── Booth CRUD ────────────────────────────────────────────────────────────────
 
 @router.get("")
 async def list_booths() -> dict:
-    return {"booths": await get_booths_service().list_booths()}
+    return {"booths": await get_booth_service().list()}
 
 
 @router.post("")
 async def create_booth(payload: BoothCreate) -> dict:
-    booth = await get_booths_service().create_booth(payload.name)
-    return {"booth": booth}
+    return {"booth": await get_booth_service().create(payload.name)}
 
 
 @router.patch("/{booth_id}")
 async def rename_booth(booth_id: int, payload: BoothRename) -> dict:
-    from app.db import get_pool
-    result = await get_pool().execute(
-        "UPDATE booths SET name = $1, updated_at = NOW() WHERE id = $2",
-        payload.name,
-        booth_id,
-    )
-    if result == "UPDATE 0":
-        raise HTTPException(status_code=404, detail=f"Стенд {booth_id} не найден")
+    try:
+        await get_booth_service().rename(booth_id, payload.name)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return {"message": "Название обновлено", "name": payload.name}
 
 
 @router.delete("/{booth_id}")
 async def delete_booth(booth_id: int) -> dict:
     try:
-        await get_booths_service().delete_booth(booth_id)
+        await get_booth_service().delete(booth_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return {"message": "Стенд удалён"}
 
 
-# ─── Settings ─────────────────────────────────────────────────────────────────
+# ── Settings ──────────────────────────────────────────────────────────────────
 
 @router.get("/{booth_id}/settings")
 async def get_settings(booth_id: int) -> dict:
     try:
-        service = get_settings_service()
-        config = await service.get(booth_id)
-        meta = await service.metadata(booth_id)
+        svc = get_settings_service()
+        config = await svc.get(booth_id)
+        meta = await svc.metadata(booth_id)
         return {"config": config.model_dump(mode="python"), "metadata": meta}
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -64,9 +59,9 @@ async def get_settings(booth_id: int) -> dict:
 @router.put("/{booth_id}/settings")
 async def update_settings(booth_id: int, payload: AppConfig) -> dict:
     try:
-        service = get_settings_service()
-        config = await service.save(booth_id, payload)
-        meta = await service.metadata(booth_id)
+        svc = get_settings_service()
+        config = await svc.save(booth_id, payload)
+        meta = await svc.metadata(booth_id)
         return {
             "config": config.model_dump(mode="python"),
             "metadata": meta,
@@ -76,12 +71,12 @@ async def update_settings(booth_id: int, payload: AppConfig) -> dict:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
-# ─── Parking ──────────────────────────────────────────────────────────────────
+# ── Parking ───────────────────────────────────────────────────────────────────
 
 @router.get("/{booth_id}/parking/status")
 async def parking_status(booth_id: int) -> dict:
     try:
-        return await get_parking_service().fetch_status(booth_id, force=False)
+        return await get_parking_service().fetch_status(booth_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
@@ -98,7 +93,7 @@ async def parking_test(booth_id: int, payload: ParserTestRequest) -> dict:
         raise HTTPException(status_code=502, detail=f"{type(exc).__name__}: {exc}") from exc
 
 
-# ─── Media ────────────────────────────────────────────────────────────────────
+# ── Media ─────────────────────────────────────────────────────────────────────
 
 @router.get("/{booth_id}/media/items")
 async def media_items(booth_id: int) -> dict:
@@ -107,10 +102,8 @@ async def media_items(booth_id: int) -> dict:
 
 @router.post("/{booth_id}/media/upload")
 async def media_upload(booth_id: int, file: UploadFile = File(...)) -> dict:
-    service = get_media_service()
     try:
-        data = await file.read()
-        service.save_file(booth_id, file.filename or "", data)
+        get_media_service().save_file(booth_id, file.filename or "", await file.read())
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"message": "Файл загружен", "name": file.filename}
@@ -118,9 +111,8 @@ async def media_upload(booth_id: int, file: UploadFile = File(...)) -> dict:
 
 @router.delete("/{booth_id}/media/file/{relative_path:path}")
 async def media_delete(booth_id: int, relative_path: str) -> dict:
-    service = get_media_service()
     try:
-        service.delete_file(booth_id, unquote(relative_path))
+        get_media_service().delete_file(booth_id, unquote(relative_path))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except FileNotFoundError as exc:

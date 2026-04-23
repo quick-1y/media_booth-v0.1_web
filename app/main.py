@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from app.db import init_pool, close_pool
 from app.api.router import api_router
-from app.route.pages import router as pages_router
+from app.pages.router import router as pages_router
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "web" / "static"
