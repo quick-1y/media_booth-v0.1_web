@@ -1,0 +1,30 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: parking-media-app
+    env_file:
+      - .env
+    environment:
+      APP_CONFIG_PATH: ${APP_CONFIG_PATH:-/app/config/settings.yaml}
+      APP_LOG_LEVEL: ${APP_LOG_LEVEL:-info}
+    volumes:
+      - ./config:/app/config
+      - ./data:/data
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: parking-media-nginx
+    depends_on:
+      - app
+    ports:
+      - "${NGINX_PORT:-8085}:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped

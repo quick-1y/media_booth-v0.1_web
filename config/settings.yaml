@@ -1,0 +1,43 @@
+version: 1
+app:
+  locale: ru-RU
+  timezone: Europe/Moscow
+  show_clock: false
+  clock_format: HH:mm
+parking:
+  parser:
+    server: http://195.239.135.49:8085
+    path: /pgs/map_monitor/parking_free_public.jsp
+    token: 73e80ac1be2e5c396833cfe479526df335f78e83e7dcbbb9
+content:
+  working_hours:
+  - 'Ежедневно: 08:00–22:00'
+  tariffs:
+  - Первые 2 часа бесплатно
+  - С 3-го часа — 50 рублей/час
+  - После 22:00 — 500 рублей/ночь
+media:
+  ads_path: /data/ads
+  carousel_seconds: 8
+  allowed_extensions:
+  - .jpg
+  - .jpeg
+  - .png
+  - .webp
+  - .gif
+  - .mp4
+  - .webm
+  - .ogg
+ui:
+  settings_access:
+    hidden_hotspot_enabled: true
+  diagnostics:
+    show_raw_yaml_preview: true
+    show_parser_test: true
+appearance:
+  accent_color: '#ffffff'
+  success_color: '#00ff33'
+  warning_color: '#ffd05c'
+  danger_color: '#a81600'
+  background_start: '#ff0505'
+  background_end: '#0088ff'

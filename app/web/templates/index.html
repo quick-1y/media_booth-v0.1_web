@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Медиастенд</title>
+    <link rel="stylesheet" href="/static/css/styles.css" />
+  </head>
+  <body>
+    <button class="settings-hotspot" id="settingsHotspot" aria-label="Открыть настройки"></button>
+    <div class="layout">
+      <section class="panel info-panel">
+        <div class="panel-head compact"><h2 class="panel-title">Часы работы</h2></div>
+        <div class="stack-list" id="hoursList"></div>
+      </section>
+      <section class="panel panel-prominent">
+        <div class="panel-head">
+          <h2 class="panel-title">Свободных мест</h2>
+        </div>
+        <div class="places-list" id="placesList"></div>
+      </section>
+      <section class="panel info-panel">
+        <div class="panel-head compact"><h2 class="panel-title">Тарифы</h2></div>
+        <div class="stack-list" id="tariffsList"></div>
+      </section>
+      <section class="panel carousel-panel">
+        <div class="carousel-stage" id="carouselStage"><div class="carousel-empty" id="carouselEmpty">Нет рекламных файлов</div></div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="settingsBackdrop" style="display:none">
+      <section class="settings-modal" aria-modal="true" role="dialog" aria-labelledby="settingsTitle">
+        <div class="settings-header">
+          <div>
+            <div class="eyebrow">Скрытое меню</div>
+            <h2 id="settingsTitle">Настройки медиастенда</h2>
+            <div class="settings-subtitle" id="settingsMetaLine">Конфигурация загружается…</div>
+          </div>
+          <button class="icon-btn" id="settingsClose" aria-label="Закрыть">✕</button>
+        </div>
+        <div class="settings-body">
+          <nav class="settings-tabs">
+            <button class="tab-btn active" data-tab="general">Общие</button>
+            <button class="tab-btn" data-tab="parsing">Парсинг</button>
+            <button class="tab-btn" data-tab="hours">Часы работы</button>
+            <button class="tab-btn" data-tab="tariffs">Тарифы</button>
+            <button class="tab-btn" data-tab="media">Реклама</button>
+            <button class="tab-btn" data-tab="appearance">Оформление</button>
+            <button class="tab-btn" data-tab="diagnostics">Диагностика</button>
+          </nav>
+          <div class="settings-panels">
+
+            <section class="tab-panel active" data-panel="general">
+              <div class="form-grid">
+                <label class="field"><span>Часовой пояс</span><input id="timezoneInput" type="text" placeholder="Europe/Moscow" /></label>
+                <label class="field"><span>Локаль</span><input id="localeInput" type="text" placeholder="ru-RU" /></label>
+                <label class="field"><span>Формат часов на экране</span><input id="clockFormatInput" type="text" placeholder="HH:mm" /></label>
+                <label class="field"><span>Показывать часы на экране</span><select id="showClockInput"><option value="true">Да</option><option value="false">Нет</option></select></label>
+              </div>
+            </section>
+
+            <section class="tab-panel" data-panel="parsing">
+              <div class="form-grid">
+                <label class="field wide"><span>Адрес сервера</span><input id="parserServerInput" type="text" placeholder="http://10.0.0.1:8085" /></label>
+                <label class="field wide"><span>Путь к ресурсу</span><input id="parserPathInput" type="text" placeholder="/pgs/map_monitor/parking_free_public.jsp" /></label>
+                <label class="field wide"><span>Токен доступа</span><input id="parserTokenInput" type="text" placeholder="73e80ac1..." /></label>
+              </div>
+            </section>
+
+            <section class="tab-panel" data-panel="hours">
+              <div class="form-grid">
+                <label class="field wide"><span>По одной строке на каждый период</span><textarea id="workingHoursInput" rows="10"></textarea></label>
+              </div>
+            </section>
+
+            <section class="tab-panel" data-panel="tariffs">
+              <div class="form-grid">
+                <label class="field wide"><span>По одной строке на каждый тариф</span><textarea id="tariffsInput" rows="10"></textarea></label>
+              </div>
+            </section>
+
+            <section class="tab-panel" data-panel="media">
+              <div class="form-grid">
+                <label class="field"><span>Папка с рекламой на сервере</span><input id="adsPathInput" type="text" placeholder="/data/ads" /></label>
+                <label class="field"><span>Время показа одного слайда, сек</span><input id="carouselSecondsInput" type="number" min="2" max="120" /></label>
+                <div class="field wide">
+                  <span>Добавить файл</span>
+                  <div class="upload-row">
+                    <input id="mediaFileInput" type="file" accept=".jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.ogg" />
+                    <button class="btn btn-primary" id="uploadMediaButton" type="button">Загрузить</button>
+                  </div>
+                </div>
+                <div class="field wide">
+                  <span>Файлы в папке</span>
+                  <div id="mediaFilesList" class="media-files-list">
+                    <div class="media-files-empty">Загрузка…</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="tab-panel" data-panel="appearance">
+              <div class="form-grid color-grid">
+                <label class="field"><span>Основной цвет интерфейса</span><input id="accentColorInput" type="color" /></label>
+                <label class="field"><span>Мест достаточно</span><input id="successColorInput" type="color" /></label>
+                <label class="field"><span>Мест нет</span><input id="warningColorInput" type="color" /></label>
+                <label class="field"><span>Данные недоступны</span><input id="dangerColorInput" type="color" /></label>
+                <label class="field"><span>Фон: начало градиента</span><input id="backgroundStartInput" type="color" /></label>
+                <label class="field"><span>Фон: конец градиента</span><input id="backgroundEndInput" type="color" /></label>
+              </div>
+            </section>
+
+            <section class="tab-panel" data-panel="diagnostics">
+              <div class="diagnostics-grid">
+                <div class="diag-card"><div class="diag-title">Путь к конфигу</div><pre id="configPathPreview">—</pre></div>
+                <div class="diag-card"><div class="diag-title">Последняя загрузка</div><pre id="loadedAtPreview">—</pre></div>
+                <div class="diag-card"><div class="diag-title">Последнее сохранение</div><pre id="savedAtPreview">—</pre></div>
+                <div class="diag-card wide"><div class="diag-title">Тест парсера</div><pre id="parserTestOutput">Нажмите «Проверить парсер»</pre></div>
+                <div class="diag-card wide"><div class="diag-title">Сырой YAML</div><pre id="rawYamlOutput">Загрузка…</pre></div>
+              </div>
+            </section>
+
+          </div>
+        </div>
+        <div class="settings-footer">
+          <div class="settings-status" id="settingsStatus">Настройки ещё не загружены</div>
+          <div class="settings-actions">
+            <button class="btn btn-muted" id="reloadDiskButton">Перечитать YAML</button>
+            <button class="btn btn-muted" id="testParserButton">Проверить парсер</button>
+            <button class="btn btn-secondary" id="cancelSettingsButton">Отмена</button>
+            <button class="btn btn-primary" id="saveSettingsButton">Сохранить</button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <script src="/static/js/main.js" defer></script>
+  </body>
+</html>

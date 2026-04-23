@@ -1,0 +1,462 @@
+const state = {
+  config: null,
+  metadata: null,
+  parkingTimer: null,
+  carouselTimer: null,
+  carouselIndex: 0,
+  carouselItems: [],
+  dirty: false,
+  settingsOpen: false,
+};
+
+const el = {
+  placesList: document.getElementById('placesList'),
+  hoursList: document.getElementById('hoursList'),
+  tariffsList: document.getElementById('tariffsList'),
+  carouselStage: document.getElementById('carouselStage'),
+  carouselEmpty: document.getElementById('carouselEmpty'),
+  settingsHotspot: document.getElementById('settingsHotspot'),
+  settingsBackdrop: document.getElementById('settingsBackdrop'),
+  settingsClose: document.getElementById('settingsClose'),
+  settingsMetaLine: document.getElementById('settingsMetaLine'),
+  settingsStatus: document.getElementById('settingsStatus'),
+  saveSettingsButton: document.getElementById('saveSettingsButton'),
+  cancelSettingsButton: document.getElementById('cancelSettingsButton'),
+  reloadDiskButton: document.getElementById('reloadDiskButton'),
+  testParserButton: document.getElementById('testParserButton'),
+  configPathPreview: document.getElementById('configPathPreview'),
+  loadedAtPreview: document.getElementById('loadedAtPreview'),
+  savedAtPreview: document.getElementById('savedAtPreview'),
+  rawYamlOutput: document.getElementById('rawYamlOutput'),
+  parserTestOutput: document.getElementById('parserTestOutput'),
+  mediaFilesList: document.getElementById('mediaFilesList'),
+  mediaFileInput: document.getElementById('mediaFileInput'),
+  uploadMediaButton: document.getElementById('uploadMediaButton'),
+};
+
+const fields = {
+  timezoneInput: document.getElementById('timezoneInput'),
+  localeInput: document.getElementById('localeInput'),
+  clockFormatInput: document.getElementById('clockFormatInput'),
+  showClockInput: document.getElementById('showClockInput'),
+  parserServerInput: document.getElementById('parserServerInput'),
+  parserPathInput: document.getElementById('parserPathInput'),
+  parserTokenInput: document.getElementById('parserTokenInput'),
+  workingHoursInput: document.getElementById('workingHoursInput'),
+  tariffsInput: document.getElementById('tariffsInput'),
+  adsPathInput: document.getElementById('adsPathInput'),
+  carouselSecondsInput: document.getElementById('carouselSecondsInput'),
+  accentColorInput: document.getElementById('accentColorInput'),
+  successColorInput: document.getElementById('successColorInput'),
+  warningColorInput: document.getElementById('warningColorInput'),
+  dangerColorInput: document.getElementById('dangerColorInput'),
+  backgroundStartInput: document.getElementById('backgroundStartInput'),
+  backgroundEndInput: document.getElementById('backgroundEndInput'),
+};
+
+const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
+const tabPanels = Array.from(document.querySelectorAll('.tab-panel'));
+
+function escapeHtml(v) {
+  return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' Б';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' КБ';
+  return (bytes / 1048576).toFixed(1) + ' МБ';
+}
+
+function toLines(text) {
+  return String(text || '').split('\n').map(i => i.trim()).filter(Boolean);
+}
+
+async function api(url, options = {}) {
+  const response = await fetch(url, {
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    ...options,
+  });
+  if (!response.ok) {
+    let message = `HTTP ${response.status}`;
+    try { const data = await response.json(); message = data.detail || data.message || message; } catch (_) {}
+    throw new Error(message);
+  }
+  return response.json();
+}
+
+function renderStack(container, items, type) {
+  if (!Array.isArray(items) || !items.length) {
+    container.innerHTML = `<div class="stack-item"><span class="stack-dot ${type}"></span><span>Нет данных</span></div>`;
+    return;
+  }
+  container.innerHTML = items.map(item =>
+    `<div class="stack-item"><span class="stack-dot ${type}"></span><span>${escapeHtml(item)}</span></div>`
+  ).join('');
+}
+
+function placeClass(value) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return 'danger';
+  if (Number(value) === 0) return 'warn';
+  return 'ok';
+}
+
+function renderPlaces(data) {
+  const levels = Array.isArray(data?.levels) ? data.levels : [];
+  if (!levels.length) {
+    el.placesList.innerHTML = '<div class="place-card"><div class="place-name">Нет данных</div><div class="place-value danger">--</div></div>';
+    return;
+  }
+  el.placesList.innerHTML = levels.map(item => {
+    const value = (item.free === null || item.free === undefined) ? '--' : item.free;
+    return `<article class="place-card"><div class="place-name">${escapeHtml(item.label || 'Уровень')}</div><div class="place-value ${placeClass(item.free)}">${escapeHtml(value)}</div></article>`;
+  }).join('');
+}
+
+function applyAppearance(config) {
+  const a = config.appearance;
+  document.documentElement.style.setProperty('--accent', a.accent_color);
+  document.documentElement.style.setProperty('--good', a.success_color);
+  document.documentElement.style.setProperty('--warn', a.warning_color);
+  document.documentElement.style.setProperty('--danger', a.danger_color);
+  document.documentElement.style.setProperty('--bg-start', a.background_start);
+  document.documentElement.style.setProperty('--bg-end', a.background_end);
+}
+
+function renderConfig(config) {
+  el.settingsHotspot.style.display = config.ui.settings_access.hidden_hotspot_enabled ? 'block' : 'none';
+  renderStack(el.hoursList, config.content.working_hours, 'hours');
+  renderStack(el.tariffsList, config.content.tariffs, 'tariffs');
+  applyAppearance(config);
+}
+
+function fillForm(config, metadata) {
+  fields.timezoneInput.value = config.app.timezone;
+  fields.localeInput.value = config.app.locale;
+  fields.clockFormatInput.value = config.app.clock_format ?? 'HH:mm';
+  fields.showClockInput.value = String(config.app.show_clock ?? true);
+  fields.parserServerInput.value = config.parking.parser.server;
+  fields.parserPathInput.value = config.parking.parser.path;
+  fields.parserTokenInput.value = config.parking.parser.token;
+  fields.workingHoursInput.value = config.content.working_hours.join('\n');
+  fields.tariffsInput.value = config.content.tariffs.join('\n');
+  fields.adsPathInput.value = config.media.ads_path;
+  fields.carouselSecondsInput.value = config.media.carousel_seconds;
+  fields.accentColorInput.value = config.appearance.accent_color;
+  fields.successColorInput.value = config.appearance.success_color;
+  fields.warningColorInput.value = config.appearance.warning_color;
+  fields.dangerColorInput.value = config.appearance.danger_color;
+  fields.backgroundStartInput.value = config.appearance.background_start;
+  fields.backgroundEndInput.value = config.appearance.background_end;
+  el.configPathPreview.textContent = metadata?.config_path || '—';
+  el.loadedAtPreview.textContent = metadata?.loaded_at || '—';
+  el.savedAtPreview.textContent = metadata?.saved_at || '—';
+  el.settingsMetaLine.textContent = metadata?.config_path ? `Файл: ${metadata.config_path}` : 'Файл конфигурации не найден';
+  state.dirty = false;
+  updateDirtyState();
+}
+
+function readForm() {
+  return {
+    version: 1,
+    app: {
+      timezone: fields.timezoneInput.value.trim() || 'Europe/Moscow',
+      locale: fields.localeInput.value.trim() || 'ru-RU',
+      clock_format: fields.clockFormatInput.value.trim() || 'HH:mm',
+      show_clock: fields.showClockInput.value === 'true',
+    },
+    parking: {
+      parser: {
+        server: fields.parserServerInput.value.trim(),
+        path: fields.parserPathInput.value.trim(),
+        token: fields.parserTokenInput.value.trim(),
+      },
+    },
+    content: {
+      working_hours: toLines(fields.workingHoursInput.value),
+      tariffs: toLines(fields.tariffsInput.value),
+    },
+    media: {
+      ads_path: fields.adsPathInput.value.trim() || '/data/ads',
+      carousel_seconds: Number(fields.carouselSecondsInput.value || 8),
+      allowed_extensions: state.config.media.allowed_extensions,
+    },
+    ui: state.config.ui,
+    appearance: {
+      accent_color: fields.accentColorInput.value,
+      success_color: fields.successColorInput.value,
+      warning_color: fields.warningColorInput.value,
+      danger_color: fields.dangerColorInput.value,
+      background_start: fields.backgroundStartInput.value,
+      background_end: fields.backgroundEndInput.value,
+    },
+  };
+}
+
+function updateDirtyState() {
+  el.saveSettingsButton.disabled = !state.dirty;
+  el.settingsStatus.textContent = state.dirty ? 'Есть несохранённые изменения' : 'Настройки синхронизированы с файлом';
+}
+
+function markDirty() { state.dirty = true; updateDirtyState(); }
+
+async function loadSettings() {
+  const data = await api('/api/settings');
+  state.config = data.config;
+  state.metadata = data.metadata;
+  renderConfig(state.config);
+  fillForm(state.config, state.metadata);
+  return data;
+}
+
+async function loadRawYaml() {
+  const data = await api('/api/settings/raw');
+  el.rawYamlOutput.textContent = data.raw_yaml || 'Пустой YAML';
+}
+
+function clearCarousel() {
+  if (state.carouselTimer) { window.clearInterval(state.carouselTimer); state.carouselTimer = null; }
+  state.carouselItems = [];
+  state.carouselIndex = 0;
+  Array.from(el.carouselStage.querySelectorAll('.carousel-item')).forEach(node => node.remove());
+}
+
+function activateCarouselItem(index) {
+  const nodes = Array.from(el.carouselStage.querySelectorAll('.carousel-item'));
+  nodes.forEach((node, i) => {
+    const active = i === index;
+    node.classList.toggle('active', active);
+    const video = node.querySelector('video');
+    if (!video) return;
+    if (active) { video.currentTime = 0; const p = video.play(); if (p?.catch) p.catch(() => {}); }
+    else { video.pause(); }
+  });
+}
+
+function renderCarousel(items) {
+  clearCarousel();
+  state.carouselItems = items;
+  if (!items.length) { el.carouselEmpty.hidden = false; return; }
+  el.carouselEmpty.hidden = true;
+  items.forEach((item, index) => {
+    const wrap = document.createElement('div');
+    wrap.className = `carousel-item${index === 0 ? ' active' : ''}`;
+    if (item.type === 'video') {
+      const video = document.createElement('video');
+      video.src = item.url; video.muted = true; video.loop = true; video.playsInline = true;
+      if (index === 0) video.autoplay = true;
+      wrap.appendChild(video);
+    } else {
+      const img = document.createElement('img');
+      img.src = item.url; img.alt = item.name || 'Рекламный файл';
+      wrap.appendChild(img);
+    }
+    el.carouselStage.appendChild(wrap);
+  });
+  const durationMs = Math.max(2, Number(state.config.media.carousel_seconds || 8)) * 1000;
+  state.carouselTimer = window.setInterval(() => {
+    state.carouselIndex = (state.carouselIndex + 1) % state.carouselItems.length;
+    activateCarouselItem(state.carouselIndex);
+  }, durationMs);
+}
+
+async function loadMedia() {
+  const data = await api('/api/media/items');
+  renderCarousel(data.items || []);
+}
+
+async function loadMediaFiles() {
+  try {
+    const data = await api('/api/media/items');
+    const items = data.items || [];
+    if (!items.length) {
+      el.mediaFilesList.innerHTML = '<div class="media-files-empty">Нет файлов в папке</div>';
+      return;
+    }
+    el.mediaFilesList.innerHTML = items.map(item => `
+      <div class="media-file-item" data-name="${escapeHtml(item.name)}">
+        <span class="media-file-icon">${item.type === 'video' ? '🎬' : '🖼️'}</span>
+        <span class="media-file-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
+        <span class="media-file-size">${formatBytes(item.size_bytes)}</span>
+        <button class="media-file-del" type="button" data-name="${escapeHtml(item.name)}">Удалить</button>
+      </div>
+    `).join('');
+    el.mediaFilesList.querySelectorAll('.media-file-del').forEach(btn => {
+      btn.addEventListener('click', () => deleteMedia(btn.dataset.name));
+    });
+  } catch (err) {
+    el.mediaFilesList.innerHTML = `<div class="media-files-empty">Ошибка загрузки: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function uploadMedia() {
+  const fileInput = el.mediaFileInput;
+  if (!fileInput.files || !fileInput.files.length) {
+    el.settingsStatus.textContent = 'Выберите файл для загрузки';
+    return;
+  }
+  const file = fileInput.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+  el.uploadMediaButton.disabled = true;
+  el.settingsStatus.textContent = 'Загрузка файла…';
+  try {
+    const response = await fetch('/api/media/upload', { method: 'POST', body: formData });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.detail || `HTTP ${response.status}`);
+    }
+    fileInput.value = '';
+    await loadMediaFiles();
+    await loadMedia();
+    el.settingsStatus.textContent = `Файл «${file.name}» загружен`;
+  } catch (err) {
+    el.settingsStatus.textContent = `Ошибка загрузки: ${err.message}`;
+  } finally {
+    el.uploadMediaButton.disabled = false;
+  }
+}
+
+async function deleteMedia(name) {
+  if (!confirm(`Удалить файл «${name}»?`)) return;
+  el.settingsStatus.textContent = 'Удаление…';
+  try {
+    await api(`/api/media/file/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    await loadMediaFiles();
+    await loadMedia();
+    el.settingsStatus.textContent = `Файл «${name}» удалён`;
+  } catch (err) {
+    el.settingsStatus.textContent = `Ошибка удаления: ${err.message}`;
+  }
+}
+
+function formatLocalDate(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString('ru-RU');
+}
+
+async function loadParkingStatus() {
+  try {
+    const data = await api('/api/parking/status');
+    renderPlaces(data);
+    const fetchedAt = data.fetched_at || data.generated_at;
+  } catch (error) {
+    renderPlaces({ levels: [], total_free: 0 });
+  }
+}
+
+function scheduleParkingReload() {
+  if (state.parkingTimer) { window.clearInterval(state.parkingTimer); }
+  loadParkingStatus();
+  state.parkingTimer = window.setInterval(loadParkingStatus, 15000);
+}
+
+function openSettings() {
+  state.settingsOpen = true;
+  el.settingsBackdrop.style.display = 'flex';
+  loadMediaFiles();
+}
+
+function closeSettings() {
+  state.settingsOpen = false;
+  el.settingsBackdrop.style.display = 'none';
+}
+
+function switchTab(name) {
+  tabButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
+  tabPanels.forEach(panel => panel.classList.toggle('active', panel.dataset.panel === name));
+  if (name === 'media') loadMediaFiles();
+}
+
+async function saveSettings() {
+  try {
+    const data = await api('/api/settings', { method: 'PUT', body: JSON.stringify(readForm()) });
+    state.config = data.config;
+    state.metadata = data.metadata;
+    renderConfig(state.config);
+    fillForm(state.config, state.metadata);
+    await loadRawYaml();
+    await loadMedia();
+    scheduleParkingReload();
+    el.settingsStatus.textContent = data.message || 'Настройки сохранены';
+  } catch (error) {
+    el.settingsStatus.textContent = `Ошибка сохранения: ${error.message}`;
+  }
+}
+
+async function reloadFromDisk() {
+  try {
+    const data = await api('/api/settings/reload', { method: 'POST' });
+    state.config = data.config;
+    state.metadata = data.metadata;
+    renderConfig(state.config);
+    fillForm(state.config, state.metadata);
+    await loadRawYaml();
+    await loadMedia();
+    scheduleParkingReload();
+    el.settingsStatus.textContent = data.message || 'YAML перечитан';
+  } catch (error) {
+    el.settingsStatus.textContent = `Ошибка перечитывания: ${error.message}`;
+  }
+}
+
+async function testParser() {
+  try {
+    const data = await api('/api/parking/test', {
+      method: 'POST',
+      body: JSON.stringify({
+        server: fields.parserServerInput.value.trim(),
+        path: fields.parserPathInput.value.trim(),
+        token: fields.parserTokenInput.value.trim(),
+      }),
+    });
+    el.parserTestOutput.textContent = JSON.stringify(data, null, 2);
+    el.settingsStatus.textContent = 'Проверка парсера выполнена успешно';
+  } catch (error) {
+    el.parserTestOutput.textContent = error.message;
+    el.settingsStatus.textContent = `Проверка не удалась: ${error.message}`;
+  }
+}
+
+function bindTabs() {
+  tabButtons.forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+}
+
+function bindDirtyTracking() {
+  Object.values(fields).forEach(node => {
+    if (!node || typeof node.addEventListener !== 'function') return;
+    node.addEventListener('input', markDirty);
+    node.addEventListener('change', markDirty);
+  });
+}
+
+function bindSettingsAccess() {
+  el.settingsHotspot.addEventListener('click', openSettings);
+  el.settingsClose.addEventListener('click', closeSettings);
+  el.cancelSettingsButton.addEventListener('click', closeSettings);
+  el.settingsBackdrop.addEventListener('click', event => { if (event.target === el.settingsBackdrop) closeSettings(); });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && state.settingsOpen) { closeSettings(); }
+  });
+  el.saveSettingsButton.addEventListener('click', saveSettings);
+  el.reloadDiskButton.addEventListener('click', reloadFromDisk);
+  el.testParserButton.addEventListener('click', testParser);
+  el.uploadMediaButton.addEventListener('click', uploadMedia);
+}
+
+async function bootstrap() {
+  bindTabs();
+  bindDirtyTracking();
+  bindSettingsAccess();
+  switchTab('general');
+  try {
+    await loadSettings();
+    await loadRawYaml();
+    await loadMedia();
+    scheduleParkingReload();
+  } catch (error) {
+    el.settingsStatus.textContent = `Ошибка инициализации: ${error.message}`;
+  }
+}
+
+bootstrap();
