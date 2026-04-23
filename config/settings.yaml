@@ -40,10 +40,17 @@ ui:
     show_tariffs: true
     show_carousel: true
 appearance:
-  accent_color: '#ffffff'
-  success_color: '#00ff33'
-  warning_color: '#ff0000'
-  danger_color: '#a81600'
+  free_places_color: '#00ff33'
+  no_places_color: '#ff0000'
+  no_data_color: '#a81600'
+  hours_text_color: '#f4f8fb'
+  tariffs_text_color: '#f4f8fb'
+  closed_message_color: '#ff0000'
+  panel_background_color: rgba(13, 27, 39, 0.88)
+  card_background_color: rgba(18, 38, 55, 0.82)
+  border_color: rgba(142, 188, 224, 0.16)
+  primary_text_color: '#f4f8fb'
+  secondary_text_color: '#9fb3c4'
   background_start: '#ff0505'
   background_end: '#0088ff'
 operating_mode:

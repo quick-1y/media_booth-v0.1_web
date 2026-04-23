@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Literal
-from pydantic import BaseModel, Field, field_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 
 
 class AppSection(BaseModel):
@@ -66,10 +66,17 @@ class UiSection(BaseModel):
 
 
 class AppearanceSection(BaseModel):
-    accent_color: str = "#49a4ff"
-    success_color: str = "#4be28a"
-    warning_color: str = "#ffd05c"
-    danger_color: str = "#ff8c7a"
+    free_places_color: str = Field(default="#4be28a", validation_alias=AliasChoices("free_places_color", "success_color"))
+    no_places_color: str = Field(default="#ffd05c", validation_alias=AliasChoices("no_places_color", "warning_color"))
+    no_data_color: str = Field(default="#ff8c7a", validation_alias=AliasChoices("no_data_color", "danger_color"))
+    hours_text_color: str = "#f4f8fb"
+    tariffs_text_color: str = "#f4f8fb"
+    closed_message_color: str = "#ffd05c"
+    panel_background_color: str = "rgba(13, 27, 39, 0.88)"
+    card_background_color: str = "rgba(18, 38, 55, 0.82)"
+    border_color: str = "rgba(142, 188, 224, 0.16)"
+    primary_text_color: str = "#f4f8fb"
+    secondary_text_color: str = "#9fb3c4"
     background_start: str = "#0b1620"
     background_end: str = "#071018"
 
