@@ -20,7 +20,7 @@ class ParkingSection(BaseModel):
 
 
 class ContentSection(BaseModel):
-    working_hours: list[str] = Field(default_factory=lambda: ["Ежедневно: 08:00–22:00"])
+    working_hours: list[str] = Field(default_factory=lambda: ["Ежедневно: 10:00–22:00"])
     tariffs: list[str] = Field(
         default_factory=lambda: ["Первые 2 часа бесплатно", "С 3-го часа — 50 рублей/час"]
     )
@@ -70,9 +70,9 @@ class AppearanceSection(BaseModel):
 class OperatingModeSection(BaseModel):
     manual_mode: Literal["normal", "closed"] = "normal"
     schedule_enabled: bool = False
-    schedule_from: str = "08:00"
+    schedule_from: str = "10:00"
     schedule_to: str = "22:00"
-    closed_text: str = "Parking is closed"
+    closed_text: str = "Парковка закрыта"
 
 
 class AppConfig(BaseModel):
