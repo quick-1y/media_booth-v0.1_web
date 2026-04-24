@@ -30,13 +30,15 @@ class BoothSettingsService:
     async def metadata(self, booth_id: int) -> dict:
         pool = get_pool()
         row = await pool.fetchrow(
-            "SELECT name, created_at, updated_at FROM booths WHERE id = $1", booth_id
+            "SELECT name, created_at, updated_at, media_updated_at FROM booths WHERE id = $1",
+            booth_id,
         )
         if not row:
-            return {"booth_id": booth_id, "booth_name": None, "loaded_at": None, "saved_at": None}
+            return {"booth_id": booth_id, "booth_name": None, "loaded_at": None, "saved_at": None, "media_updated_at": None}
         return {
             "booth_id": booth_id,
             "booth_name": row["name"],
             "loaded_at": row["created_at"].isoformat(),
             "saved_at": row["updated_at"].isoformat(),
+            "media_updated_at": row["media_updated_at"].isoformat() if row["media_updated_at"] else None,
         }

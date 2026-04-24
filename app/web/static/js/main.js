@@ -498,25 +498,28 @@ async function applyRemoteSettings(force) {
     if (!response.ok) return;
     const data = await response.json();
 
-    if (!force && data.metadata?.saved_at === state.metadata?.saved_at) return;
+    const settingsChanged = data.metadata?.saved_at !== state.metadata?.saved_at;
+    const mediaChanged = data.metadata?.media_updated_at !== state.metadata?.media_updated_at;
+
+    if (!force && !settingsChanged && !mediaChanged) return;
 
     const prevParking = JSON.stringify(state.config?.parking);
-    const prevMedia = JSON.stringify(state.config?.media);
 
     state.config = data.config;
     state.metadata = data.metadata;
 
-    renderConfig(state.config);
-
-    if (!state.dirty) {
-      fillForm(state.config, state.metadata);
-      loadRawJson();
+    if (settingsChanged || force) {
+      renderConfig(state.config);
+      if (!state.dirty) {
+        fillForm(state.config, state.metadata);
+        loadRawJson();
+      }
+      if (JSON.stringify(data.config?.parking) !== prevParking) {
+        scheduleParkingReload();
+      }
     }
 
-    if (JSON.stringify(data.config?.parking) !== prevParking) {
-      scheduleParkingReload();
-    }
-    if (JSON.stringify(data.config?.media) !== prevMedia) {
+    if (mediaChanged || force) {
       await loadMedia();
     }
   } catch (_) {}
@@ -532,6 +535,10 @@ function connectSettingsStream() {
 
   source.addEventListener('settings_updated', () => {
     applyRemoteSettings(true);
+  });
+
+  source.addEventListener('media_updated', () => {
+    loadMedia();
   });
 
   source.onerror = () => {

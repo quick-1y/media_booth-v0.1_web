@@ -49,10 +49,15 @@ async def _run_migrations(pool: asyncpg.Pool) -> None:
     async with pool.acquire() as conn:
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS booths (
-                id         SERIAL PRIMARY KEY,
-                name       VARCHAR(100) NOT NULL,
-                settings   JSONB NOT NULL DEFAULT '{}',
-                created_at TIMESTAMPTZ DEFAULT NOW(),
-                updated_at TIMESTAMPTZ DEFAULT NOW()
+                id               SERIAL PRIMARY KEY,
+                name             VARCHAR(100) NOT NULL,
+                settings         JSONB NOT NULL DEFAULT '{}',
+                created_at       TIMESTAMPTZ DEFAULT NOW(),
+                updated_at       TIMESTAMPTZ DEFAULT NOW(),
+                media_updated_at TIMESTAMPTZ DEFAULT NOW()
             )
+        """)
+        await conn.execute("""
+            ALTER TABLE booths
+            ADD COLUMN IF NOT EXISTS media_updated_at TIMESTAMPTZ DEFAULT NOW()
         """)

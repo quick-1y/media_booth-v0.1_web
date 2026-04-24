@@ -20,10 +20,10 @@ class SSEManager:
         except ValueError:
             pass
 
-    def notify(self, booth_id: int) -> None:
+    def notify(self, booth_id: int, event: str = "settings_updated") -> None:
         for q in list(self._subs.get(booth_id, [])):
             try:
-                q.put_nowait("settings_updated")
+                q.put_nowait(event)
             except asyncio.QueueFull:
                 pass
 

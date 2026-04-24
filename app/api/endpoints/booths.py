@@ -11,6 +11,7 @@ from app.services.deps import (
     get_media_service,
 )
 from app.services.sse_service import get_sse_manager
+from app.db import get_pool
 
 router = APIRouter()
 
@@ -136,6 +137,10 @@ async def media_upload(booth_id: int, file: UploadFile = File(...)) -> dict:
         get_media_service().save_file(booth_id, file.filename or "", await file.read())
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    await get_pool().execute(
+        "UPDATE booths SET media_updated_at = NOW() WHERE id = $1", booth_id
+    )
+    get_sse_manager().notify(booth_id, "media_updated")
     return {"message": "Файл загружен", "name": file.filename}
 
 
@@ -147,6 +152,10 @@ async def media_delete(booth_id: int, relative_path: str) -> dict:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    await get_pool().execute(
+        "UPDATE booths SET media_updated_at = NOW() WHERE id = $1", booth_id
+    )
+    get_sse_manager().notify(booth_id, "media_updated")
     return {"message": "Файл удалён"}
 
 
