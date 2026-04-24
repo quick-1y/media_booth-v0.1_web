@@ -1,7 +1,7 @@
 from __future__ import annotations
 from pathlib import Path
 from urllib.parse import quote
-from app.core.config import get_runtime_settings
+from app.config import get_runtime_settings
 
 _ALLOWED = frozenset({".jpg", ".jpeg", ".png", ".webp", ".gif", ".mp4", ".webm", ".ogg"})
 _VIDEO = frozenset({".mp4", ".webm", ".ogg"})

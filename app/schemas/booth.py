@@ -11,7 +11,3 @@ class BoothNamePayload(BaseModel):
         if not v:
             raise ValueError("Название стенда не может быть пустым")
         return v
-
-
-BoothCreate = BoothNamePayload
-BoothRename = BoothNamePayload

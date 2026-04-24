@@ -81,9 +81,6 @@ const fields = {
 const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
 const tabPanels = Array.from(document.querySelectorAll('.tab-panel'));
 
-function escapeHtml(v) {
-  return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
-}
 
 function formatBytes(bytes) {
   if (bytes < 1024) return bytes + ' Б';

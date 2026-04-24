@@ -3,7 +3,7 @@ from urllib.parse import unquote
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse
 from app.schemas.config import AppConfig, ParserTestRequest
-from app.schemas.booth import BoothCreate, BoothRename
+from app.schemas.booth import BoothNamePayload
 from app.services.deps import (
     get_booth_service,
     get_settings_service,
@@ -24,12 +24,12 @@ async def list_booths() -> dict:
 
 
 @router.post("")
-async def create_booth(payload: BoothCreate) -> dict:
+async def create_booth(payload: BoothNamePayload) -> dict:
     return {"booth": await get_booth_service().create(payload.name)}
 
 
 @router.patch("/{booth_id}")
-async def rename_booth(booth_id: int, payload: BoothRename) -> dict:
+async def rename_booth(booth_id: int, payload: BoothNamePayload) -> dict:
     try:
         await get_booth_service().rename(booth_id, payload.name)
     except ValueError as exc:
