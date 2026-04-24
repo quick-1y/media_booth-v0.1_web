@@ -1,6 +1,7 @@
+import asyncio
 from urllib.parse import unquote
 from fastapi import APIRouter, HTTPException, UploadFile, File
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from app.schemas.config import AppConfig, ParserTestRequest
 from app.schemas.booth import BoothCreate, BoothRename
 from app.services.deps import (
@@ -9,6 +10,7 @@ from app.services.deps import (
     get_parking_service,
     get_media_service,
 )
+from app.services.sse_service import get_sse_manager
 
 router = APIRouter()
 
@@ -62,6 +64,7 @@ async def update_settings(booth_id: int, payload: AppConfig) -> dict:
         svc = get_settings_service()
         config = await svc.save(booth_id, payload)
         meta = await svc.metadata(booth_id)
+        get_sse_manager().notify(booth_id)
         return {
             "config": config.model_dump(mode="python"),
             "metadata": meta,
@@ -69,6 +72,33 @@ async def update_settings(booth_id: int, payload: AppConfig) -> dict:
         }
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/{booth_id}/stream")
+async def booth_stream(booth_id: int) -> StreamingResponse:
+    manager = get_sse_manager()
+    q = manager.subscribe(booth_id)
+
+    async def generate():
+        try:
+            yield "data: connected\n\n"
+            while True:
+                try:
+                    msg = await asyncio.wait_for(q.get(), timeout=25.0)
+                    yield f"event: {msg}\ndata: {{}}\n\n"
+                except asyncio.TimeoutError:
+                    yield ": keepalive\n\n"
+        finally:
+            manager.unsubscribe(booth_id, q)
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 # ── Parking ───────────────────────────────────────────────────────────────────

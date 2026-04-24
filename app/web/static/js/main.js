@@ -5,6 +5,7 @@ const state = {
   carouselTimer: null,
   carouselGeneration: 0,
   modeCheckTimer: null,
+  settingsSyncTimer: null,
   carouselIndex: 0,
   carouselItems: [],
   dirty: false,
@@ -491,6 +492,61 @@ function scheduleModeCheck() {
   }, 60000);
 }
 
+async function applyRemoteSettings(force) {
+  try {
+    const response = await fetch(`/api/booths/${BOOTH_ID}/settings`, { cache: 'no-store' });
+    if (!response.ok) return;
+    const data = await response.json();
+
+    if (!force && data.metadata?.saved_at === state.metadata?.saved_at) return;
+
+    const prevParking = JSON.stringify(state.config?.parking);
+    const prevMedia = JSON.stringify(state.config?.media);
+
+    state.config = data.config;
+    state.metadata = data.metadata;
+
+    renderConfig(state.config);
+
+    if (!state.dirty) {
+      fillForm(state.config, state.metadata);
+      loadRawJson();
+    }
+
+    if (JSON.stringify(data.config?.parking) !== prevParking) {
+      scheduleParkingReload();
+    }
+    if (JSON.stringify(data.config?.media) !== prevMedia) {
+      await loadMedia();
+    }
+  } catch (_) {}
+}
+
+function connectSettingsStream() {
+  if (state.settingsSyncTimer) {
+    window.clearInterval(state.settingsSyncTimer);
+    state.settingsSyncTimer = null;
+  }
+
+  const source = new EventSource(`/api/booths/${BOOTH_ID}/stream`);
+
+  source.addEventListener('settings_updated', () => {
+    applyRemoteSettings(true);
+  });
+
+  source.onerror = () => {
+    if (state.settingsSyncTimer) return;
+    state.settingsSyncTimer = window.setInterval(() => applyRemoteSettings(false), 10000);
+  };
+
+  source.addEventListener('open', () => {
+    if (state.settingsSyncTimer) {
+      window.clearInterval(state.settingsSyncTimer);
+      state.settingsSyncTimer = null;
+    }
+  });
+}
+
 function openSettings() {
   state.settingsOpen = true;
   el.settingsBackdrop.style.display = 'flex';
@@ -604,6 +660,7 @@ async function bootstrap() {
     await loadMedia();
     scheduleParkingReload();
     scheduleModeCheck();
+    connectSettingsStream();
     if (new URLSearchParams(window.location.search).has('settings')) {
       openSettings();
     }
